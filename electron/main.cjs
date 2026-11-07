@@ -39,7 +39,7 @@ function loadState() {
   try {
     return JSON.parse(fs.readFileSync(stateFile(), "utf8"));
   } catch {
-    return { mode: "dock", side: "right" };
+    return { mode: "panel", side: "right" };
   }
 }
 

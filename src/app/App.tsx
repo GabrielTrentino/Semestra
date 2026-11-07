@@ -170,6 +170,15 @@ export default function App() {
     input.click();
   };
 
+  // Force a readable window size whenever the renderer is showing the
+  // folder-picker or an error state — dock mode is 72px wide and clips them.
+  useEffect(() => {
+    if (!inShell) return;
+    if (status.phase === "needs-folder" || status.phase === "error") {
+      if (mode === "dock") shell.setMode("panel");
+    }
+  }, [status.phase, mode, inShell]);
+
   // ------ FIRST-RUN: ask for data folder ------
   if (status.phase === "loading") {
     return (
