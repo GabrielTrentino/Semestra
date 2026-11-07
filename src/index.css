@@ -22,6 +22,14 @@ body {
   }
 }
 
+/* Bubble mode: the Electron window is transparent, so the page must be too,
+   or the round icon sits on a visible 56px square. */
+html.app-bubble,
+html.app-bubble body,
+html.app-bubble #root {
+  background: transparent !important;
+}
+
 /* Rendered markdown (react-markdown) inside notebook blocks. */
 .md-view {
   font-size: 0.875rem;

@@ -5,7 +5,6 @@ import {
   Sparkles,
   Maximize2,
   Minimize2,
-  ArrowLeftRight,
   Square,
   X,
   Settings as SettingsIcon,
@@ -28,7 +27,7 @@ import { CalendarPanel } from "../features/calendar/CalendarPanel";
 import { TodayPanel } from "../features/today/TodayPanel";
 import { SettingsPanel } from "../features/settings/SettingsPanel";
 import { todayISO, formatBRLong } from "../lib/date";
-import { DockView } from "./DockView";
+import { BubbleView } from "./BubbleView";
 import { hasShell, shell, type ShellMode } from "../lib/semestraBridge";
 import { currentTerm, extractTerms } from "../lib/terms";
 
@@ -41,7 +40,6 @@ export default function App() {
   const { state, update, reset, status, pickFolder } = useAppState();
   const [tab, setTab] = useState<Tab>("hoje");
   const [mode, setMode] = useState<ShellMode>("panel");
-  const [side, setSide] = useState<"left" | "right">("right");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const inShell = hasShell();
 
@@ -50,10 +48,7 @@ export default function App() {
     if (!inShell) return;
     let off: (() => void) | undefined;
     shell.getState().then((s) => {
-      if (s) {
-        setMode(s.mode);
-        setSide(s.side);
-      }
+      if (s) setMode(s.mode);
     });
     off = shell.onMode((m) => setMode(m));
     return () => off?.();
@@ -171,12 +166,18 @@ export default function App() {
     input.click();
   };
 
+  // The window is transparent for the bubble's sake; the page background has
+  // to follow the mode or the icon sits on an opaque square.
+  useEffect(() => {
+    document.documentElement.classList.toggle("app-bubble", mode === "bubble");
+  }, [mode]);
+
   // Force a readable window size whenever the renderer is showing the
-  // folder-picker or an error state — dock mode is 72px wide and clips them.
+  // folder-picker or an error state — the bubble is 56px and clips them.
   useEffect(() => {
     if (!inShell) return;
     if (status.phase === "needs-folder" || status.phase === "error") {
-      if (mode === "dock") shell.setMode("panel");
+      if (mode === "bubble") shell.setMode("panel");
     }
   }, [status.phase, mode, inShell]);
 
@@ -213,11 +214,9 @@ export default function App() {
     );
   }
 
-  // ------ DOCK MODE ------
-  if (mode === "dock") {
-    return (
-      <DockView lessons={state.lessons} courses={state.courses} side={side} />
-    );
+  // ------ BUBBLE MODE ------
+  if (mode === "bubble") {
+    return <BubbleView lessons={state.lessons} courses={state.courses} />;
   }
 
   const compact = mode === "panel";
@@ -272,20 +271,9 @@ export default function App() {
             >
               <button
                 type="button"
-                onClick={async () => {
-                  const next = await shell.toggleSide();
-                  if (next) setSide(next);
-                }}
+                onClick={() => shell.setMode("bubble")}
                 className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
-                title="Trocar lado da tela"
-              >
-                <ArrowLeftRight className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => shell.setMode("dock")}
-                className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
-                title="Recolher para barra lateral"
+                title="Recolher para o ícone flutuante"
               >
                 <Minimize2 className="h-4 w-4" />
               </button>

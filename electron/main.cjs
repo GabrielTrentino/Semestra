@@ -1,7 +1,7 @@
-// Semestra — Electron shell (hotbar / dock lateral)
+// Semestra — Electron shell (ícone flutuante)
 //
 // Three window modes:
-//   dock      — faixa fina (72px) encaixada na borda, sempre no topo
+//   bubble    — ícone redondo de 56px, arrastável, canto inferior direito
 //   panel     — painel expandido (420px) por cima das janelas, sempre no topo
 //   full      — janela completa com borda normal, não fica no topo
 
@@ -40,9 +40,9 @@ protocol.registerSchemesAsPrivileged([
   },
 ]);
 
-const DOCK_WIDTH = 72;
+const BUBBLE_SIZE = 56;
 const PANEL_WIDTH = 420;
-const EDGE_GAP = 0; // px from the screen edge
+const EDGE_GAP = 16; // px from the screen edge
 
 // Persist a tiny bit of window state next to the user data dir.
 function stateFile() {
@@ -50,11 +50,25 @@ function stateFile() {
 }
 
 function loadState() {
+  let saved = {};
   try {
-    return JSON.parse(fs.readFileSync(stateFile(), "utf8"));
+    saved = JSON.parse(fs.readFileSync(stateFile(), "utf8"));
   } catch {
-    return { mode: "panel", side: "right" };
+    /* first run */
   }
+  // "dock" and the left/right side are gone; anything stale lands on bubble.
+  const mode = ["bubble", "panel", "full"].includes(saved.mode)
+    ? saved.mode
+    : "bubble";
+  return {
+    mode,
+    bubble: isPoint(saved.bubble) ? saved.bubble : null,
+    panel: isPoint(saved.panel) ? saved.panel : null,
+  };
+}
+
+function isPoint(p) {
+  return p && Number.isFinite(p.x) && Number.isFinite(p.y);
 }
 
 function saveState(state) {
@@ -70,40 +84,95 @@ let mainWindow = null;
 let tray = null;
 let state = loadState();
 
-function computeBounds(mode, side) {
-  const display = screen.getPrimaryDisplay();
-  const { x: wx, y: wy, width: ww, height: wh } = display.workArea;
-  const w = mode === "dock" ? DOCK_WIDTH : mode === "panel" ? PANEL_WIDTH : 980;
-  const h = mode === "full" ? Math.min(760, wh - 40) : wh - EDGE_GAP * 2;
+/** Work area of whichever display currently holds the window (or the cursor). */
+function activeWorkArea() {
+  const point = mainWindow
+    ? (() => {
+        const b = mainWindow.getBounds();
+        return { x: b.x + Math.floor(b.width / 2), y: b.y + Math.floor(b.height / 2) };
+      })()
+    : screen.getCursorScreenPoint();
+  return screen.getDisplayNearestPoint(point).workArea;
+}
 
-  let x;
-  if (mode === "full") {
-    x = wx + Math.floor((ww - w) / 2);
-  } else if (side === "left") {
-    x = wx + EDGE_GAP;
-  } else {
-    x = wx + ww - w - EDGE_GAP;
+function sizeFor(mode, area) {
+  if (mode === "bubble") return { width: BUBBLE_SIZE, height: BUBBLE_SIZE };
+  if (mode === "panel") {
+    return { width: PANEL_WIDTH, height: Math.min(760, area.height - EDGE_GAP * 2) };
   }
-  const y =
-    mode === "full"
-      ? wy + Math.floor((wh - h) / 2)
-      : wy + EDGE_GAP;
+  return { width: 980, height: Math.min(760, area.height - 40) };
+}
 
-  return { x, y, width: w, height: h };
+function clampToArea(x, y, width, height, area) {
+  return {
+    x: Math.round(Math.min(Math.max(x, area.x), area.x + area.width - width)),
+    y: Math.round(Math.min(Math.max(y, area.y), area.y + area.height - height)),
+  };
+}
+
+/** Default bubble spot: bottom-right of the work area. */
+function defaultBubblePos(area) {
+  return {
+    x: area.x + area.width - BUBBLE_SIZE - EDGE_GAP,
+    y: area.y + area.height - BUBBLE_SIZE - EDGE_GAP,
+  };
+}
+
+function computeBounds(mode) {
+  const area = activeWorkArea();
+  const { width, height } = sizeFor(mode, area);
+
+  if (mode === "full") {
+    return {
+      width,
+      height,
+      x: area.x + Math.floor((area.width - width) / 2),
+      y: area.y + Math.floor((area.height - height) / 2),
+    };
+  }
+
+  if (mode === "bubble") {
+    const pos = state.bubble ?? defaultBubblePos(area);
+    return { width, height, ...clampToArea(pos.x, pos.y, width, height, area) };
+  }
+
+  // Panel: reuse where the user last left it, else open it anchored to the
+  // bubble's bottom-right corner so it unfolds from the icon.
+  let pos = state.panel;
+  if (!pos) {
+    const b = state.bubble ?? defaultBubblePos(area);
+    pos = { x: b.x + BUBBLE_SIZE - width, y: b.y + BUBBLE_SIZE - height };
+  }
+  return { width, height, ...clampToArea(pos.x, pos.y, width, height, area) };
 }
 
 function applyMode(mode) {
   if (!mainWindow) return;
   state.mode = mode;
-  saveState(state);
 
-  const bounds = computeBounds(mode, state.side);
-  mainWindow.setMinimumSize(mode === "full" ? 720 : DOCK_WIDTH, 300);
+  const bounds = computeBounds(mode);
+  // Order matters: shrink the minimum before setting a smaller bounds, or
+  // Windows keeps the old floor and the bubble comes out panel-sized.
+  mainWindow.setMinimumSize(
+    mode === "bubble" ? BUBBLE_SIZE : mode === "full" ? 720 : 360,
+    mode === "bubble" ? BUBBLE_SIZE : 300
+  );
   mainWindow.setBounds(bounds);
   mainWindow.setAlwaysOnTop(mode !== "full", "floating");
   mainWindow.setResizable(mode === "full");
   mainWindow.setSkipTaskbar(mode !== "full");
+  saveState(state);
   mainWindow.webContents.send("semestra:mode", mode);
+}
+
+/** Remember where the user dragged the window, per mode. */
+function rememberPosition() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  const [x, y] = mainWindow.getPosition();
+  if (state.mode === "bubble") state.bubble = { x, y };
+  else if (state.mode === "panel") state.panel = { x, y };
+  else return;
+  saveState(state);
 }
 
 function toggleVisibility() {
@@ -118,16 +187,18 @@ function toggleVisibility() {
 
 function createWindow() {
   const initialMode = state.mode === "full" ? "panel" : state.mode;
-  const bounds = computeBounds(initialMode, state.side);
+  const bounds = computeBounds(initialMode);
 
   mainWindow = new BrowserWindow({
     ...bounds,
     icon: path.join(__dirname, "icon.ico"),
     frame: false,
     show: false,
-    transparent: false,
-    backgroundColor: "#0f172a",
-    hasShadow: true,
+    // Transparent so the bubble can be an actual circle; panel and full
+    // modes paint their own opaque background from CSS.
+    transparent: true,
+    backgroundColor: "#00000000",
+    hasShadow: false,
     alwaysOnTop: true,
     skipTaskbar: true,
     resizable: false,
@@ -168,6 +239,9 @@ function createWindow() {
     return { action: "allow" };
   });
 
+  mainWindow.on("moved", rememberPosition);
+  mainWindow.on("blur", stopBubbleDrag);
+
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
@@ -193,10 +267,10 @@ function createTray() {
     tray.setContextMenu(
       Menu.buildFromTemplate([
         {
-          label: "Modo barra (dock)",
+          label: "Ícone flutuante",
           type: "radio",
-          checked: state.mode === "dock",
-          click: () => applyMode("dock"),
+          checked: state.mode === "bubble",
+          click: () => applyMode("bubble"),
         },
         {
           label: "Modo painel",
@@ -212,21 +286,11 @@ function createTray() {
         },
         { type: "separator" },
         {
-          label: "Encaixar à direita",
-          type: "radio",
-          checked: state.side === "right",
+          label: "Recolocar no canto inferior direito",
           click: () => {
-            state.side = "right";
-            saveState(state);
-            applyMode(state.mode);
-          },
-        },
-        {
-          label: "Encaixar à esquerda",
-          type: "radio",
-          checked: state.side === "left",
-          click: () => {
-            state.side = "left";
+            const area = activeWorkArea();
+            state.bubble = defaultBubblePos(area);
+            state.panel = null;
             saveState(state);
             applyMode(state.mode);
           },
@@ -250,11 +314,62 @@ ipcMain.handle("semestra:set-mode", (_e, mode) => {
   applyMode(mode);
 });
 
-ipcMain.handle("semestra:toggle-side", () => {
-  state.side = state.side === "right" ? "left" : "right";
-  saveState(state);
-  applyMode(state.mode);
-  return state.side;
+// ---------- Bubble dragging ----------
+//
+// A CSS `-webkit-app-region: drag` region would be less code, but Chromium
+// swallows click events inside one, and the bubble has to be both draggable
+// and clickable. So the renderer reports press/release and the main process
+// follows the OS cursor itself — no IPC per mouse move.
+
+// Hard ceiling on a drag: if the renderer never reports the release (lost
+// focus, window yanked out from under the cursor), the bubble must not stay
+// glued to the mouse forever.
+const DRAG_MAX_MS = 15_000;
+
+let dragTimer = null;
+let dragOffset = null;
+let dragStartedAt = 0;
+
+function stopBubbleDrag() {
+  if (dragTimer) clearInterval(dragTimer);
+  dragTimer = null;
+  dragOffset = null;
+  rememberPosition();
+}
+
+ipcMain.handle("semestra:bubble:drag-start", () => {
+  if (!mainWindow || state.mode !== "bubble") return;
+  const cursor = screen.getCursorScreenPoint();
+  const [wx, wy] = mainWindow.getPosition();
+  dragOffset = { x: cursor.x - wx, y: cursor.y - wy };
+  dragStartedAt = Date.now();
+  if (dragTimer) clearInterval(dragTimer);
+  dragTimer = setInterval(() => {
+    if (
+      !mainWindow ||
+      mainWindow.isDestroyed() ||
+      !dragOffset ||
+      state.mode !== "bubble" ||
+      Date.now() - dragStartedAt > DRAG_MAX_MS
+    ) {
+      stopBubbleDrag();
+      return;
+    }
+    const c = screen.getCursorScreenPoint();
+    const area = screen.getDisplayNearestPoint(c).workArea;
+    const next = clampToArea(
+      c.x - dragOffset.x,
+      c.y - dragOffset.y,
+      BUBBLE_SIZE,
+      BUBBLE_SIZE,
+      area
+    );
+    mainWindow.setPosition(next.x, next.y);
+  }, 16);
+});
+
+ipcMain.handle("semestra:bubble:drag-end", () => {
+  stopBubbleDrag();
 });
 
 ipcMain.handle("semestra:hide", () => {
@@ -263,7 +378,6 @@ ipcMain.handle("semestra:hide", () => {
 
 ipcMain.handle("semestra:get-state", () => ({
   mode: state.mode,
-  side: state.side,
   platform: process.platform,
 }));
 

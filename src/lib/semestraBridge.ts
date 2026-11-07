@@ -1,12 +1,10 @@
 // Thin bridge to the Electron shell (optional — the app still works in plain
 // browser; semestra will be undefined and buttons become no-ops).
 
-export type ShellMode = "dock" | "panel" | "full";
-export type ShellSide = "left" | "right";
+export type ShellMode = "bubble" | "panel" | "full";
 
 type ShellState = {
   mode: ShellMode;
-  side: ShellSide;
   platform: string;
 };
 
@@ -53,7 +51,8 @@ export type SaveImageResult =
 
 type SemestraAPI = {
   setMode: (mode: ShellMode) => Promise<void>;
-  toggleSide: () => Promise<ShellSide>;
+  bubbleDragStart: () => Promise<void>;
+  bubbleDragEnd: () => Promise<void>;
   hide: () => Promise<void>;
   getState: () => Promise<ShellState>;
   openExternal: (url: string) => Promise<void>;
@@ -84,8 +83,11 @@ export const shell = {
   setMode(mode: ShellMode) {
     return window.semestra?.setMode(mode);
   },
-  toggleSide() {
-    return window.semestra?.toggleSide();
+  bubbleDragStart() {
+    return window.semestra?.bubbleDragStart();
+  },
+  bubbleDragEnd() {
+    return window.semestra?.bubbleDragEnd();
   },
   hide() {
     return window.semestra?.hide();

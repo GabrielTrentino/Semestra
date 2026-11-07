@@ -2,7 +2,8 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 const api = {
   setMode: (mode) => ipcRenderer.invoke("semestra:set-mode", mode),
-  toggleSide: () => ipcRenderer.invoke("semestra:toggle-side"),
+  bubbleDragStart: () => ipcRenderer.invoke("semestra:bubble:drag-start"),
+  bubbleDragEnd: () => ipcRenderer.invoke("semestra:bubble:drag-end"),
   hide: () => ipcRenderer.invoke("semestra:hide"),
   getState: () => ipcRenderer.invoke("semestra:get-state"),
   openExternal: (url) => ipcRenderer.invoke("semestra:open-external", url),
