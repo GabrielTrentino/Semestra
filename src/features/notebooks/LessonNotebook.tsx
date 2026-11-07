@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { Course, Notebook, NotebookBlock } from "../../lib/types";
 import { shell, type RunLanguage } from "../../lib/semestraBridge";
+import { MarkdownView } from "./MarkdownView";
 
 type Props = {
   notebook: Notebook;
@@ -207,7 +208,8 @@ export function BlockEditor({
   const [outputOpen, setOutputOpen] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const preview = firstLine(block.source) || (block.kind === "code" ? "(código vazio)" : "(sem conteúdo)");
+  const previewLine = firstLine(block.source);
+  const emptyLabel = block.kind === "code" ? "(código vazio)" : "(sem conteúdo)";
 
   if (collapsed) {
     return (
@@ -221,13 +223,15 @@ export function BlockEditor({
         ) : (
           <Code2 className="h-3 w-3 text-slate-400 shrink-0" />
         )}
-        <span
-          className={`text-[12px] truncate flex-1 ${
-            block.kind === "code" ? "font-mono" : ""
-          }`}
-        >
-          {preview}
-        </span>
+        <div className="text-[12px] truncate flex-1 min-w-0">
+          {!previewLine ? (
+            <span className="text-slate-400">{emptyLabel}</span>
+          ) : block.kind === "markdown" ? (
+            <MarkdownView source={previewLine} className="md-inline" />
+          ) : (
+            <span className="font-mono">{previewLine}</span>
+          )}
+        </div>
         {block.kind === "code" && (
           <span className="text-[10px] uppercase text-slate-400 shrink-0">
             {block.language}
@@ -317,14 +321,25 @@ export function BlockEditor({
           onChange={(e) =>
             onChange({ source: e.target.value } as Partial<NotebookBlock>)
           }
-          onBlur={() => {
+          onBlur={(e) => {
+            // Only collapse if focus didn't move inside this block (toolbar buttons).
+            const next = e.relatedTarget as Node | null;
+            if (next && e.currentTarget.parentElement?.contains(next)) return;
             if (block.source.trim().length > 0) setCollapsed(true);
           }}
-          placeholder="Anotação em Markdown…  **negrito**, *itálico*, <u>sublinhado</u>, # Título"
+          placeholder="Anotação em Markdown…  **negrito**, *itálico*, <u>sublinhado</u>, # Título, $x^2$"
           rows={Math.min(14, Math.max(3, block.source.split("\n").length + 1))}
           spellCheck={false}
           className="w-full resize-y border-0 bg-transparent p-2 text-sm focus:outline-none font-mono"
         />
+        {block.source.trim().length > 0 && (
+          <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 p-3">
+            <div className="text-[10px] uppercase tracking-wide text-slate-400 mb-1">
+              Preview
+            </div>
+            <MarkdownView source={block.source} />
+          </div>
+        )}
       </div>
     );
   }
