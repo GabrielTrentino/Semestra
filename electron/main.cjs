@@ -16,15 +16,29 @@ const {
   dialog,
   shell,
   nativeImage,
+  protocol,
+  net,
 } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
 const os = require("node:os");
 const { spawn } = require("node:child_process");
 const crypto = require("node:crypto");
+const { pathToFileURL } = require("node:url");
 
 const DEV_URL = process.env.SEMESTRA_DEV_URL;
 const IS_DEV = !!DEV_URL;
+
+// Images pasted into notes are served through our own scheme so the same
+// markdown works in dev (page is http://127.0.0.1) and packaged (page is
+// file://), where a raw file:// <img> would be blocked in dev.
+const ASSET_SCHEME = "semestra-asset";
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: ASSET_SCHEME,
+    privileges: { standard: true, secure: true, supportFetchAPI: true },
+  },
+]);
 
 const DOCK_WIDTH = 72;
 const PANEL_WIDTH = 420;
@@ -108,6 +122,7 @@ function createWindow() {
 
   mainWindow = new BrowserWindow({
     ...bounds,
+    icon: path.join(__dirname, "icon.ico"),
     frame: false,
     show: false,
     transparent: false,
@@ -159,13 +174,16 @@ function createWindow() {
 }
 
 function buildTrayIcon() {
-  // 16x16 square white dot on transparent as a safe default.
-  const png = nativeImage.createFromDataURL(
-    "data:image/png;base64," +
-      "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAHklEQVR4AWMY" +
-      "BaNgFIyCUTAKRsEoGAWjYBSMAgIACHgAAUvA7f8AAAAASUVORK5CYII="
-  );
-  return png;
+  const icon = nativeImage.createFromPath(path.join(__dirname, "tray.png"));
+  if (icon.isEmpty()) {
+    // Fallback: 16x16 white square, so the tray never ends up invisible.
+    return nativeImage.createFromDataURL(
+      "data:image/png;base64," +
+        "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAAHklEQVR4AWMY" +
+        "BaNgFIyCUTAKRsEoGAWjYBSMAgIACHgAAUvA7f8AAAAASUVORK5CYII="
+    );
+  }
+  return icon.resize({ width: 16, height: 16, quality: "best" });
 }
 
 function createTray() {
@@ -439,6 +457,75 @@ ipcMain.handle("semestra:data:reveal", () => {
   if (folder && fs.existsSync(folder)) shell.openPath(folder);
 });
 
+// ---------- Note images (paste / drop) ----------
+
+const ASSETS_DIR = "assets";
+const ASSET_MAX_BYTES = 12 * 1024 * 1024;
+const ASSET_EXT = {
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/jpeg": "jpg",
+  "image/gif": "gif",
+  "image/svg+xml": "svg",
+};
+
+function assetsDirFor(folder) {
+  return path.join(folder, ASSETS_DIR);
+}
+
+// Only ever resolve plain file names inside the assets dir — never a path
+// that could climb out of it.
+function resolveAssetPath(name) {
+  const folder = currentDataFolder();
+  if (!folder) return null;
+  const clean = path.basename(String(name || ""));
+  if (!clean || clean.startsWith(".")) return null;
+  const dir = assetsDirFor(folder);
+  const full = path.join(dir, clean);
+  if (path.relative(dir, full) !== clean) return null;
+  return full;
+}
+
+ipcMain.handle("semestra:data:save-image", (_e, payload) => {
+  const folder = currentDataFolder();
+  if (!folder) return { ok: false, error: "Nenhuma pasta de dados escolhida." };
+
+  const mime = String(payload?.mime || "");
+  const ext = ASSET_EXT[mime];
+  if (!ext) return { ok: false, error: `Formato não suportado: ${mime || "?"}` };
+
+  let buf;
+  try {
+    buf = Buffer.from(payload.data);
+  } catch {
+    return { ok: false, error: "Dados da imagem inválidos." };
+  }
+  if (!buf.length) return { ok: false, error: "Imagem vazia." };
+  if (buf.length > ASSET_MAX_BYTES) {
+    return {
+      ok: false,
+      error: `Imagem muito grande (${(buf.length / 1024 / 1024).toFixed(1)} MB, limite 12 MB).`,
+    };
+  }
+
+  try {
+    const dir = assetsDirFor(folder);
+    fs.mkdirSync(dir, { recursive: true });
+    // Content hash: pasting the same screenshot twice reuses one file.
+    const hash = crypto.createHash("sha1").update(buf).digest("hex").slice(0, 12);
+    const name = `${hash}.${ext}`;
+    const full = path.join(dir, name);
+    if (!fs.existsSync(full)) {
+      const tmp = `${full}.tmp`;
+      fs.writeFileSync(tmp, buf);
+      fs.renameSync(tmp, full);
+    }
+    return { ok: true, name, bytes: buf.length };
+  } catch (err) {
+    return { ok: false, error: `Não consegui gravar: ${err.message}` };
+  }
+});
+
 // ---------- Code runner (C# / Java) ----------
 
 const RUN_TIMEOUT_MS = 20_000;
@@ -706,6 +793,17 @@ if (!gotLock) {
   });
 
   app.whenReady().then(() => {
+    // semestra-asset://img/<name> -> <data folder>/assets/<name>
+    protocol.handle(ASSET_SCHEME, (request) => {
+      const name = decodeURIComponent(new URL(request.url).pathname).replace(/^\/+/, "");
+      const full = resolveAssetPath(name);
+      if (!full || !fs.existsSync(full)) {
+        return new Response("Not found", { status: 404 });
+      }
+      // pathToFileURL, not string concat: data folders have spaces and accents.
+      return net.fetch(pathToFileURL(full).toString());
+    });
+
     createWindow();
     createTray();
     // Delay applyMode by one tick so the window finishes creating.

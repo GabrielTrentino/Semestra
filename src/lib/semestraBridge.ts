@@ -45,6 +45,12 @@ export type DataWriteResult =
   | { ok: true }
   | { ok: false; reason: string; message?: string };
 
+export type SaveImagePayload = { mime: string; data: Uint8Array };
+
+export type SaveImageResult =
+  | { ok: true; name: string; bytes: number }
+  | { ok: false; error: string };
+
 type SemestraAPI = {
   setMode: (mode: ShellMode) => Promise<void>;
   toggleSide: () => Promise<ShellSide>;
@@ -60,6 +66,7 @@ type SemestraAPI = {
     read: () => Promise<DataReadResult>;
     write: (state: unknown) => Promise<DataWriteResult>;
     reveal: () => Promise<void>;
+    saveImage: (payload: SaveImagePayload) => Promise<SaveImageResult>;
   };
 };
 
@@ -139,5 +146,19 @@ export const shell = {
     async reveal() {
       await window.semestra?.data.reveal();
     },
+    async saveImage(payload: SaveImagePayload): Promise<SaveImageResult> {
+      return (
+        (await window.semestra?.data.saveImage(payload)) ?? {
+          ok: false,
+          error: "Shell não disponível",
+        }
+      );
+    },
   },
 };
+
+/** Markdown `![](assets/x.png)` -> a URL the renderer can actually load. */
+export function assetUrl(src: string): string {
+  const name = src.replace(/^\.?\/*/, "").replace(/^assets\//, "");
+  return `semestra-asset://img/${encodeURIComponent(name)}`;
+}

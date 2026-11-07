@@ -14,6 +14,7 @@ const api = {
     read: () => ipcRenderer.invoke("semestra:data:read"),
     write: (state) => ipcRenderer.invoke("semestra:data:write", state),
     reveal: () => ipcRenderer.invoke("semestra:data:reveal"),
+    saveImage: (payload) => ipcRenderer.invoke("semestra:data:save-image", payload),
   },
   onMode: (cb) => {
     const listener = (_e, mode) => cb(mode);

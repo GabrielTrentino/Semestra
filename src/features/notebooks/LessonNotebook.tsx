@@ -10,10 +10,12 @@ import {
   Bold,
   Italic,
   Underline,
+  ImagePlus,
 } from "lucide-react";
 import type { Course, Notebook, NotebookBlock } from "../../lib/types";
 import { shell, type RunLanguage } from "../../lib/semestraBridge";
 import { MarkdownView } from "./MarkdownView";
+import { saveImageFile, imagesFromTransfer } from "./noteImages";
 
 type Props = {
   notebook: Notebook;
@@ -193,6 +195,26 @@ function prefixLine(
   });
 }
 
+function insertAtCursor(
+  textarea: HTMLTextAreaElement,
+  text: string,
+  onChange: (next: string) => void
+) {
+  const start = textarea.selectionStart ?? textarea.value.length;
+  const end = textarea.selectionEnd ?? start;
+  const source = textarea.value;
+  // Keep images on their own line so they render as blocks.
+  const needsLeading = start > 0 && !source.slice(0, start).endsWith("\n");
+  const body = (needsLeading ? "\n" : "") + text + "\n";
+  const next = source.slice(0, start) + body + source.slice(end);
+  onChange(next);
+  requestAnimationFrame(() => {
+    textarea.focus();
+    const pos = start + body.length;
+    textarea.setSelectionRange(pos, pos);
+  });
+}
+
 export function BlockEditor({
   block,
   onChange,
@@ -206,6 +228,8 @@ export function BlockEditor({
 }) {
   const [collapsed, setCollapsed] = useState<boolean>(() => block.source.trim().length > 0);
   const [outputOpen, setOutputOpen] = useState(true);
+  const [imgNote, setImgNote] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const previewLine = firstLine(block.source);
@@ -267,6 +291,35 @@ export function BlockEditor({
       );
     };
 
+    const addImages = async (files: File[]) => {
+      if (files.length === 0) return;
+      setImgNote(files.length > 1 ? `Salvando ${files.length} imagens…` : "Salvando imagem…");
+      const failures: string[] = [];
+      for (const file of files) {
+        const res = await saveImageFile(file, file.name.replace(/\.[^.]+$/, ""));
+        if (!res.ok) {
+          failures.push(res.error);
+          continue;
+        }
+        if (textareaRef.current) {
+          insertAtCursor(textareaRef.current, res.markdown, (next) =>
+            onChange({ source: next } as Partial<NotebookBlock>)
+          );
+        }
+      }
+      setImgNote(failures.length ? failures[0] : null);
+      if (!failures.length) setTimeout(() => setImgNote(null), 1500);
+    };
+
+    const pickImages = () => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.multiple = true;
+      input.onchange = () => void addImages(Array.from(input.files ?? []));
+      input.click();
+    };
+
     return (
       <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
         <header className="flex items-center gap-1 px-2 py-1 border-b border-slate-200 dark:border-slate-800 text-[11px] text-slate-500">
@@ -289,6 +342,9 @@ export function BlockEditor({
           </ToolbarButton>
           <ToolbarButton title="Sublinhado  <u>" onClick={() => apply("<u>", "</u>", "texto")}>
             <Underline className="h-3 w-3" />
+          </ToolbarButton>
+          <ToolbarButton title="Inserir imagem  (ou cole com Ctrl+V)" onClick={pickImages}>
+            <ImagePlus className="h-3 w-3" />
           </ToolbarButton>
           <select
             onChange={(e) => {
@@ -327,11 +383,37 @@ export function BlockEditor({
             if (next && e.currentTarget.parentElement?.contains(next)) return;
             if (block.source.trim().length > 0) setCollapsed(true);
           }}
-          placeholder="Anotação em Markdown…  **negrito**, *itálico*, <u>sublinhado</u>, # Título, $x^2$"
+          onPaste={(e) => {
+            const files = imagesFromTransfer(e.clipboardData);
+            if (files.length === 0) return; // plain text pastes normally
+            e.preventDefault();
+            void addImages(files);
+          }}
+          onDragOver={(e) => {
+            if (imagesFromTransfer(e.dataTransfer).length === 0) return;
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            const files = imagesFromTransfer(e.dataTransfer);
+            setDragOver(false);
+            if (files.length === 0) return;
+            e.preventDefault();
+            void addImages(files);
+          }}
+          placeholder="Anotação em Markdown…  **negrito**, *itálico*, <u>sublinhado</u>, # Título, $x^2$ — cole um print com Ctrl+V"
           rows={Math.min(14, Math.max(3, block.source.split("\n").length + 1))}
           spellCheck={false}
-          className="w-full resize-y border-0 bg-transparent p-2 text-sm focus:outline-none font-mono"
+          className={`w-full resize-y border-0 bg-transparent p-2 text-sm focus:outline-none font-mono ${
+            dragOver ? "ring-2 ring-inset ring-blue-400" : ""
+          }`}
         />
+        {imgNote && (
+          <div className="px-2 pb-1 text-[11px] text-slate-500 dark:text-slate-400">
+            {imgNote}
+          </div>
+        )}
         {block.source.trim().length > 0 && (
           <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 p-3">
             <div className="text-[10px] uppercase tracking-wide text-slate-400 mb-1">
