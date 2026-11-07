@@ -26,6 +26,24 @@ export type RuntimeStatus = {
   javac: string | null;
 };
 
+export type DataLocation = {
+  folder: string | null;
+  exists: boolean;
+  hasData: boolean;
+};
+
+export type DataPickResult =
+  | { ok: true; folder: string; hasData: boolean }
+  | { ok: false; canceled?: boolean; error?: string };
+
+export type DataReadResult =
+  | { ok: true; state: unknown | null; folder: string }
+  | { ok: false; reason: string; message?: string; folder?: string };
+
+export type DataWriteResult =
+  | { ok: true }
+  | { ok: false; reason: string; message?: string };
+
 type SemestraAPI = {
   setMode: (mode: ShellMode) => Promise<void>;
   toggleSide: () => Promise<ShellSide>;
@@ -35,6 +53,13 @@ type SemestraAPI = {
   runCode: (payload: { language: RunLanguage; source: string }) => Promise<RunResult>;
   checkRuntimes: () => Promise<RuntimeStatus>;
   onMode: (cb: (mode: ShellMode) => void) => () => void;
+  data: {
+    getLocation: () => Promise<DataLocation>;
+    pickFolder: () => Promise<DataPickResult>;
+    read: () => Promise<DataReadResult>;
+    write: (state: unknown) => Promise<DataWriteResult>;
+    reveal: () => Promise<void>;
+  };
 };
 
 declare global {
@@ -81,5 +106,37 @@ export const shell = {
   },
   onMode(cb: (mode: ShellMode) => void): () => void {
     return window.semestra?.onMode(cb) ?? (() => undefined);
+  },
+  data: {
+    async getLocation(): Promise<DataLocation | null> {
+      return (await window.semestra?.data.getLocation()) ?? null;
+    },
+    async pickFolder(): Promise<DataPickResult> {
+      return (
+        (await window.semestra?.data.pickFolder()) ?? {
+          ok: false,
+          error: "Shell não disponível",
+        }
+      );
+    },
+    async read(): Promise<DataReadResult> {
+      return (
+        (await window.semestra?.data.read()) ?? {
+          ok: false,
+          reason: "no-shell",
+        }
+      );
+    },
+    async write(state: unknown): Promise<DataWriteResult> {
+      return (
+        (await window.semestra?.data.write(state)) ?? {
+          ok: false,
+          reason: "no-shell",
+        }
+      );
+    },
+    async reveal() {
+      await window.semestra?.data.reveal();
+    },
   },
 };

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import type {
   Assignment,
   Course,
@@ -6,6 +6,7 @@ import type {
   Notebook,
   Program,
 } from "./types";
+import { hasShell, shell } from "./semestraBridge";
 
 const STORAGE_KEY = "semestra:state:v1";
 
@@ -33,10 +34,6 @@ const EMPTY: AppState = {
   notebooks: [],
 };
 
-/**
- * Migra formatos antigos: `course.termLabel` (string) → `course.termLabels`
- * (string[]). Também garante `programs[].calendarId` para registros antigos.
- */
 function migrate(raw: Partial<AppState> & { courses?: unknown[] }): AppState {
   const programs: Program[] = (raw.programs ?? EMPTY.programs).map((p) => ({
     ...p,
@@ -68,7 +65,7 @@ function migrate(raw: Partial<AppState> & { courses?: unknown[] }): AppState {
   };
 }
 
-function load(): AppState {
+function loadLocalFallback(): AppState {
   if (typeof localStorage === "undefined") return EMPTY;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -79,23 +76,93 @@ function load(): AppState {
   }
 }
 
-function save(state: AppState) {
+function saveLocalFallback(state: AppState) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {
-    /* quota or private mode — ignore */
+    /* ignore */
   }
 }
 
-export function useAppState() {
-  const [state, setState] = useState<AppState>(() => load());
+export type StoreStatus =
+  | { phase: "loading" }
+  | { phase: "needs-folder" }
+  | { phase: "error"; message: string }
+  | { phase: "ready"; folder: string | null };
 
+export function useAppState() {
+  const [state, setState] = useState<AppState>(EMPTY);
+  const [status, setStatus] = useState<StoreStatus>(() =>
+    hasShell() ? { phase: "loading" } : { phase: "ready", folder: null }
+  );
+  const dirtyRef = useRef(false);
+  const writeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Initial load.
   useEffect(() => {
-    save(state);
-  }, [state]);
+    let cancelled = false;
+    if (!hasShell()) {
+      setState(loadLocalFallback());
+      return;
+    }
+    (async () => {
+      const loc = await shell.data.getLocation();
+      if (cancelled) return;
+      if (!loc?.folder || !loc.exists) {
+        setStatus({ phase: "needs-folder" });
+        return;
+      }
+      const res = await shell.data.read();
+      if (cancelled) return;
+      if (!res.ok) {
+        setStatus({
+          phase: "error",
+          message: res.message ?? res.reason,
+        });
+        return;
+      }
+      if (res.state) {
+        setState(migrate(res.state as any));
+      } else {
+        // Folder exists but no data file yet — migrate from localStorage once.
+        const legacy = loadLocalFallback();
+        setState(legacy);
+        if (legacy !== EMPTY) {
+          await shell.data.write(legacy);
+          try {
+            localStorage.removeItem(STORAGE_KEY);
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+      setStatus({ phase: "ready", folder: res.folder });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Persist on every change (debounced), only once we're ready.
+  useEffect(() => {
+    if (status.phase !== "ready") return;
+    if (!dirtyRef.current) return;
+    if (writeTimer.current) clearTimeout(writeTimer.current);
+    writeTimer.current = setTimeout(() => {
+      if (hasShell()) {
+        shell.data.write(state);
+      } else {
+        saveLocalFallback(state);
+      }
+    }, 150);
+    return () => {
+      if (writeTimer.current) clearTimeout(writeTimer.current);
+    };
+  }, [state, status]);
 
   const update = useCallback(
     (patch: Partial<AppState> | ((prev: AppState) => Partial<AppState>)) => {
+      dirtyRef.current = true;
       setState((prev) => {
         const p = typeof patch === "function" ? patch(prev) : patch;
         return { ...prev, ...p };
@@ -105,15 +172,40 @@ export function useAppState() {
   );
 
   const reset = useCallback(() => {
+    dirtyRef.current = true;
     setState(EMPTY);
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      /* ignore */
-    }
   }, []);
 
-  return { state, setState, update, reset };
+  const pickFolder = useCallback(async () => {
+    const wasReady = status.phase === "ready";
+    const res = await shell.data.pickFolder();
+    if (!res.ok) return res;
+
+    if (res.hasData) {
+      // Folder already has a semestra-data.json — adopt it.
+      const read = await shell.data.read();
+      if (read.ok && read.state) setState(migrate(read.state as any));
+    } else if (wasReady) {
+      // Changing folder: move current in-memory state into the new folder.
+      await shell.data.write(state);
+    } else {
+      // First-run and the picked folder is empty: seed from localStorage if any.
+      const legacy = loadLocalFallback();
+      setState(legacy);
+      if (JSON.stringify(legacy) !== JSON.stringify(EMPTY)) {
+        await shell.data.write(legacy);
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    setStatus({ phase: "ready", folder: res.folder });
+    return res;
+  }, [state, status]);
+
+  return { state, setState, update, reset, status, pickFolder };
 }
 
 export function exportBackup(state: AppState): string {

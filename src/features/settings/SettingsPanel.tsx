@@ -3,6 +3,7 @@ import {
   Building2,
   ClipboardPaste,
   Database,
+  FolderOpen,
   X,
   Plus,
   Trash2,
@@ -18,6 +19,7 @@ type Props = {
   courses: Course[];
   terms: Term[];
   currentTermLabel?: string;
+  dataFolder: string | null;
   onClose: () => void;
   onSaveProgram: (p: Program) => void;
   onDeleteProgram: (id: string) => void;
@@ -25,6 +27,8 @@ type Props = {
   onExport: () => void;
   onImportBackup: () => void;
   onReset: () => void;
+  onChangeDataFolder: () => Promise<unknown>;
+  onRevealDataFolder: () => void;
 };
 
 type Section = "instituicoes" | "whatsapp" | "backup";
@@ -103,9 +107,12 @@ export function SettingsPanel(props: Props) {
             )}
             {section === "backup" && (
               <BackupSection
+                dataFolder={props.dataFolder}
                 onExport={props.onExport}
                 onImport={props.onImportBackup}
                 onReset={props.onReset}
+                onChangeDataFolder={props.onChangeDataFolder}
+                onRevealDataFolder={props.onRevealDataFolder}
               />
             )}
           </div>
@@ -324,20 +331,57 @@ function ProgramForm({
 }
 
 function BackupSection({
+  dataFolder,
   onExport,
   onImport,
   onReset,
+  onChangeDataFolder,
+  onRevealDataFolder,
 }: {
+  dataFolder: string | null;
   onExport: () => void;
   onImport: () => void;
   onReset: () => void;
+  onChangeDataFolder: () => Promise<unknown>;
+  onRevealDataFolder: () => void;
 }) {
   return (
     <div className="space-y-4">
+      <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3">
+        <div className="flex items-center gap-2 text-sm font-medium mb-1">
+          <FolderOpen className="h-4 w-4" />
+          Pasta de dados
+        </div>
+        <div className="text-xs text-slate-500 mb-2">
+          Arquivo <code>semestra-data.json</code> fica dentro desta pasta.
+          Mudar a pasta migra os dados atuais pra nova localização.
+        </div>
+        <div className="font-mono text-xs break-all bg-slate-100 dark:bg-slate-900 rounded p-2 mb-2">
+          {dataFolder ?? "(não definido)"}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onChangeDataFolder}
+            className="rounded-md bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-3 py-1.5 text-xs"
+          >
+            Trocar pasta…
+          </button>
+          {dataFolder && (
+            <button
+              type="button"
+              onClick={onRevealDataFolder}
+              className="rounded-md border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-xs"
+            >
+              Abrir pasta
+            </button>
+          )}
+        </div>
+      </div>
+
       <p className="text-sm text-slate-500">
-        Os dados do Semestra ficam no armazenamento local do navegador. Exporte
-        um JSON de backup periodicamente — ele contém disciplinas, aulas,
-        notebooks e eventos.
+        Exporte um JSON de backup periodicamente — ele contém disciplinas,
+        aulas, notebooks e eventos.
       </p>
       <div className="flex flex-wrap gap-2">
         <button

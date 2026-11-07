@@ -37,7 +37,7 @@ const TERMS = extractTerms(CAL);
 type Tab = "hoje" | "disciplinas" | "calendario";
 
 export default function App() {
-  const { state, update, reset } = useAppState();
+  const { state, update, reset, status, pickFolder } = useAppState();
   const [tab, setTab] = useState<Tab>("hoje");
   const [mode, setMode] = useState<ShellMode>("panel");
   const [side, setSide] = useState<"left" | "right">("right");
@@ -169,6 +169,39 @@ export default function App() {
     };
     input.click();
   };
+
+  // ------ FIRST-RUN: ask for data folder ------
+  if (status.phase === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-sm text-slate-500">
+        Carregando…
+      </div>
+    );
+  }
+  if (status.phase === "needs-folder") {
+    return <FolderPrompt onPick={pickFolder} />;
+  }
+  if (status.phase === "error") {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="max-w-md rounded-xl border border-red-300 bg-red-50 dark:bg-red-950/40 p-4 text-sm">
+          <div className="font-semibold text-red-700 dark:text-red-400 mb-1">
+            Erro ao ler os dados
+          </div>
+          <div className="text-red-800 dark:text-red-200 mb-3">
+            {status.message}
+          </div>
+          <button
+            type="button"
+            onClick={pickFolder}
+            className="rounded-md bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-3 py-1.5 text-xs"
+          >
+            Escolher outra pasta
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ------ DOCK MODE ------
   if (mode === "dock") {
@@ -353,6 +386,7 @@ export default function App() {
           courses={state.courses}
           terms={TERMS}
           currentTermLabel={currentTermLabel}
+          dataFolder={status.phase === "ready" ? status.folder : null}
           onClose={() => setSettingsOpen(false)}
           onSaveProgram={saveProgram}
           onDeleteProgram={deleteProgram}
@@ -360,12 +394,71 @@ export default function App() {
           onExport={handleExport}
           onImportBackup={handleImportBackup}
           onReset={reset}
+          onChangeDataFolder={pickFolder}
+          onRevealDataFolder={() => shell.data.reveal()}
         />
       )}
 
       <footer className="max-w-5xl mx-auto px-4 pb-6 text-center text-xs text-slate-500">
-        Dados locais · {CAL.source}
+        Dados em{" "}
+        <button
+          type="button"
+          onClick={() => shell.data.reveal()}
+          className="underline hover:text-slate-700 dark:hover:text-slate-300"
+          title="Abrir pasta"
+        >
+          {status.phase === "ready" && status.folder
+            ? status.folder
+            : "localStorage"}
+        </button>{" "}
+        · {CAL.source}
       </footer>
+    </div>
+  );
+}
+
+function FolderPrompt({
+  onPick,
+}: {
+  onPick: () => Promise<{ ok: boolean; error?: string; canceled?: boolean }>;
+}) {
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const handle = async () => {
+    setBusy(true);
+    setError(null);
+    const r = await onPick();
+    setBusy(false);
+    if (!r.ok && !r.canceled) setError(r.error ?? "Não foi possível usar essa pasta.");
+  };
+  return (
+    <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-xl text-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="h-5 w-5 text-amber-500" />
+          <div className="font-semibold">Bem-vindo ao Semestra</div>
+        </div>
+        <p className="text-slate-600 dark:text-slate-300 mb-4">
+          Escolha uma pasta onde o Semestra vai guardar seus dados. Tudo fica
+          num arquivo <code className="text-xs">semestra-data.json</code> dentro
+          dela — você pode sincronizar com OneDrive, Google Drive, ou guardar no
+          pendrive. Nada é escrito em <code className="text-xs">AppData</code>{" "}
+          ou <code className="text-xs">Local</code>.
+        </p>
+        {error && (
+          <div className="rounded-md bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 text-xs p-2 mb-3">
+            {error}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={handle}
+          disabled={busy}
+          className="w-full rounded-lg bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-3 py-2 font-medium disabled:opacity-50"
+        >
+          {busy ? "Abrindo seletor…" : "Escolher pasta…"}
+        </button>
+      </div>
     </div>
   );
 }

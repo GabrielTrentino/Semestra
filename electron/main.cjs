@@ -13,6 +13,7 @@ const {
   globalShortcut,
   screen,
   ipcMain,
+  dialog,
   shell,
   nativeImage,
 } = require("electron");
@@ -252,6 +253,110 @@ ipcMain.handle("semestra:open-external", (_e, url) => {
   if (typeof url === "string" && /^https?:\/\//i.test(url)) {
     shell.openExternal(url);
   }
+});
+
+// ---------- User data folder ----------
+//
+// Only a tiny pointer ({ dataFolder: "..." }) lives in ~/.semestra/config.json.
+// All real app data (state) is stored as semestra-data.json inside the folder
+// the user picks on first launch.
+
+const CONFIG_DIR = path.join(os.homedir(), ".semestra");
+const CONFIG_FILE = path.join(CONFIG_DIR, "config.json");
+const DATA_FILENAME = "semestra-data.json";
+
+function readConfig() {
+  try {
+    return JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+function writeConfig(cfg) {
+  try {
+    fs.mkdirSync(CONFIG_DIR, { recursive: true });
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2), "utf8");
+    return true;
+  } catch (err) {
+    console.error("Semestra: cannot write config", err);
+    return false;
+  }
+}
+
+function currentDataFolder() {
+  const cfg = readConfig();
+  return typeof cfg.dataFolder === "string" ? cfg.dataFolder : null;
+}
+
+function dataFileFor(folder) {
+  return path.join(folder, DATA_FILENAME);
+}
+
+ipcMain.handle("semestra:data:get-location", () => {
+  const folder = currentDataFolder();
+  const exists = folder ? fs.existsSync(folder) : false;
+  const hasData = folder ? fs.existsSync(dataFileFor(folder)) : false;
+  return { folder, exists, hasData };
+});
+
+ipcMain.handle("semestra:data:pick-folder", async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: "Escolha onde guardar os dados do Semestra",
+    properties: ["openDirectory", "createDirectory"],
+  });
+  if (result.canceled || !result.filePaths[0]) {
+    return { ok: false, canceled: true };
+  }
+  const folder = result.filePaths[0];
+  try {
+    fs.mkdirSync(folder, { recursive: true });
+    // Smoke test: write + delete a sentinel.
+    const probe = path.join(folder, ".semestra-write-test");
+    fs.writeFileSync(probe, "", "utf8");
+    fs.unlinkSync(probe);
+  } catch (err) {
+    return {
+      ok: false,
+      error: `Sem permissão de escrita na pasta: ${err.message}`,
+    };
+  }
+  writeConfig({ ...readConfig(), dataFolder: folder });
+  const hasData = fs.existsSync(dataFileFor(folder));
+  return { ok: true, folder, hasData };
+});
+
+ipcMain.handle("semestra:data:read", () => {
+  const folder = currentDataFolder();
+  if (!folder) return { ok: false, reason: "no-folder" };
+  const file = dataFileFor(folder);
+  if (!fs.existsSync(file)) return { ok: true, state: null, folder };
+  try {
+    const raw = fs.readFileSync(file, "utf8");
+    return { ok: true, state: JSON.parse(raw), folder };
+  } catch (err) {
+    return { ok: false, reason: "parse-error", message: err.message, folder };
+  }
+});
+
+ipcMain.handle("semestra:data:write", (_e, state) => {
+  const folder = currentDataFolder();
+  if (!folder) return { ok: false, reason: "no-folder" };
+  const file = dataFileFor(folder);
+  const tmp = file + ".tmp";
+  try {
+    fs.mkdirSync(folder, { recursive: true });
+    fs.writeFileSync(tmp, JSON.stringify(state, null, 2), "utf8");
+    fs.renameSync(tmp, file);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, reason: "write-error", message: err.message };
+  }
+});
+
+ipcMain.handle("semestra:data:reveal", () => {
+  const folder = currentDataFolder();
+  if (folder && fs.existsSync(folder)) shell.openPath(folder);
 });
 
 // ---------- Code runner (C# / Java) ----------

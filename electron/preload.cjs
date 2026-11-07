@@ -8,6 +8,13 @@ const api = {
   openExternal: (url) => ipcRenderer.invoke("semestra:open-external", url),
   runCode: (payload) => ipcRenderer.invoke("semestra:run-code", payload),
   checkRuntimes: () => ipcRenderer.invoke("semestra:check-runtimes"),
+  data: {
+    getLocation: () => ipcRenderer.invoke("semestra:data:get-location"),
+    pickFolder: () => ipcRenderer.invoke("semestra:data:pick-folder"),
+    read: () => ipcRenderer.invoke("semestra:data:read"),
+    write: (state) => ipcRenderer.invoke("semestra:data:write", state),
+    reveal: () => ipcRenderer.invoke("semestra:data:reveal"),
+  },
   onMode: (cb) => {
     const listener = (_e, mode) => cb(mode);
     ipcRenderer.on("semestra:mode", listener);
