@@ -48,8 +48,8 @@ export function SettingsPanel(props: Props) {
         if (e.target === e.currentTarget) props.onClose();
       }}
     >
-      <div className="w-full max-w-4xl max-h-[92vh] overflow-hidden rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-2xl grid grid-cols-[180px_1fr]">
-        <aside className="border-r border-slate-200 dark:border-slate-800 p-3 space-y-1 bg-slate-50 dark:bg-slate-900">
+      <div className="w-full max-w-4xl h-[92vh] overflow-hidden rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-2xl grid grid-cols-[180px_1fr] grid-rows-[1fr]">
+        <aside className="border-r border-slate-200 dark:border-slate-800 p-3 space-y-1 bg-slate-50 dark:bg-slate-900 overflow-y-auto min-h-0">
           <div className="px-2 py-1 text-xs uppercase tracking-wide text-slate-500">
             Configurações
           </div>
@@ -69,8 +69,8 @@ export function SettingsPanel(props: Props) {
             </button>
           ))}
         </aside>
-        <div className="overflow-y-auto">
-          <header className="flex items-center gap-2 p-4 border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-white dark:bg-slate-950">
+        <div className="overflow-y-auto min-h-0">
+          <header className="flex items-center gap-2 p-4 border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-white dark:bg-slate-950 z-10">
             <h2 className="text-base font-semibold">
               {SECTIONS.find((s) => s.id === section)?.label}
             </h2>
