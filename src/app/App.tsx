@@ -448,11 +448,15 @@ function FolderPrompt({
           <div className="font-semibold">Bem-vindo ao Semestra</div>
         </div>
         <p className="text-slate-600 dark:text-slate-300 mb-4">
-          Escolha uma pasta onde o Semestra vai guardar seus dados. Tudo fica
-          num arquivo <code className="text-xs">semestra-data.json</code> dentro
-          dela — você pode sincronizar com OneDrive, Google Drive, ou guardar no
-          pendrive. Nada é escrito em <code className="text-xs">AppData</code>{" "}
-          ou <code className="text-xs">Local</code>.
+          Escolha uma pasta onde o Semestra vai guardar seus dados. A
+          estrutura é{" "}
+          <code className="text-xs">semestra-data.json</code> (programas,
+          disciplinas, aulas, eventos) +{" "}
+          <code className="text-xs">notebooks/</code> (um arquivo por
+          anotação). Você pode sincronizar com OneDrive, Google Drive, ou
+          guardar no pendrive. Nada é escrito em{" "}
+          <code className="text-xs">AppData</code> ou{" "}
+          <code className="text-xs">Local</code>.
         </p>
         {error && (
           <div className="rounded-md bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 text-xs p-2 mb-3">

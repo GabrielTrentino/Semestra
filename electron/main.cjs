@@ -326,28 +326,108 @@ ipcMain.handle("semestra:data:pick-folder", async () => {
   return { ok: true, folder, hasData };
 });
 
+const NOTEBOOKS_DIR = "notebooks";
+
+function notebooksDirFor(folder) {
+  return path.join(folder, NOTEBOOKS_DIR);
+}
+
+function listNotebookFiles(dir) {
+  try {
+    return fs.readdirSync(dir).filter((n) => n.endsWith(".json"));
+  } catch {
+    return [];
+  }
+}
+
+function readNotebookFile(dir, name) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(dir, name), "utf8"));
+  } catch (err) {
+    console.error("Semestra: skipping unreadable notebook", name, err.message);
+    return null;
+  }
+}
+
 ipcMain.handle("semestra:data:read", () => {
   const folder = currentDataFolder();
   if (!folder) return { ok: false, reason: "no-folder" };
   const file = dataFileFor(folder);
   if (!fs.existsSync(file)) return { ok: true, state: null, folder };
+
+  let core;
   try {
-    const raw = fs.readFileSync(file, "utf8");
-    return { ok: true, state: JSON.parse(raw), folder };
+    core = JSON.parse(fs.readFileSync(file, "utf8"));
   } catch (err) {
     return { ok: false, reason: "parse-error", message: err.message, folder };
   }
+
+  const nbDir = notebooksDirFor(folder);
+  const files = listNotebookFiles(nbDir);
+  const notebooks = files
+    .map((n) => readNotebookFile(nbDir, n))
+    .filter((n) => n && typeof n.id === "string");
+
+  // Legacy support: if the folder-based notebooks are empty but the old
+  // monolith has them inline, use those. On the next write they'll move.
+  const legacy = Array.isArray(core.notebooks) ? core.notebooks : [];
+  const combined = notebooks.length > 0 ? notebooks : legacy;
+
+  const { notebooks: _ignored, ...rest } = core;
+  return { ok: true, state: { ...rest, notebooks: combined }, folder };
 });
 
 ipcMain.handle("semestra:data:write", (_e, state) => {
   const folder = currentDataFolder();
   if (!folder) return { ok: false, reason: "no-folder" };
+
+  const safeState = state && typeof state === "object" ? state : {};
+  const notebooks = Array.isArray(safeState.notebooks) ? safeState.notebooks : [];
+  const core = { ...safeState };
+  delete core.notebooks;
+
   const file = dataFileFor(folder);
+  const nbDir = notebooksDirFor(folder);
   const tmp = file + ".tmp";
+
   try {
     fs.mkdirSync(folder, { recursive: true });
-    fs.writeFileSync(tmp, JSON.stringify(state, null, 2), "utf8");
+    fs.mkdirSync(nbDir, { recursive: true });
+
+    // Core: atomic rewrite.
+    fs.writeFileSync(tmp, JSON.stringify(core, null, 2), "utf8");
     fs.renameSync(tmp, file);
+
+    // Notebooks: one file per notebook.id. Only rewrite when contents changed.
+    const keep = new Set();
+    for (const nb of notebooks) {
+      if (!nb || typeof nb.id !== "string") continue;
+      const fname = nb.id + ".json";
+      keep.add(fname);
+      const dest = path.join(nbDir, fname);
+      const serialized = JSON.stringify(nb, null, 2);
+      let existing = null;
+      try {
+        existing = fs.readFileSync(dest, "utf8");
+      } catch {
+        /* missing */
+      }
+      if (existing === serialized) continue;
+      const nbTmp = dest + ".tmp";
+      fs.writeFileSync(nbTmp, serialized, "utf8");
+      fs.renameSync(nbTmp, dest);
+    }
+
+    // Remove notebook files that are no longer present in state.
+    for (const name of listNotebookFiles(nbDir)) {
+      if (!keep.has(name)) {
+        try {
+          fs.unlinkSync(path.join(nbDir, name));
+        } catch {
+          /* ignore */
+        }
+      }
+    }
     return { ok: true };
   } catch (err) {
     return { ok: false, reason: "write-error", message: err.message };

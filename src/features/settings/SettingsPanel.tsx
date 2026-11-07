@@ -353,8 +353,10 @@ function BackupSection({
           Pasta de dados
         </div>
         <div className="text-xs text-slate-500 mb-2">
-          Arquivo <code>semestra-data.json</code> fica dentro desta pasta.
-          Mudar a pasta migra os dados atuais pra nova localização.
+          Estrutura dentro da pasta:{" "}
+          <code>semestra-data.json</code> (programas, disciplinas, aulas,
+          eventos) e <code>notebooks/&lt;id&gt;.json</code> (um arquivo por
+          notebook). Mudar a pasta migra os dados atuais pra nova localização.
         </div>
         <div className="font-mono text-xs break-all bg-slate-100 dark:bg-slate-900 rounded p-2 mb-2">
           {dataFolder ?? "(não definido)"}
