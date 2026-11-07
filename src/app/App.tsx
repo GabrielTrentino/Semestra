@@ -1,0 +1,371 @@
+import { useEffect, useState } from "react";
+import {
+  BookOpen,
+  CalendarDays,
+  Sparkles,
+  Maximize2,
+  Minimize2,
+  Columns2,
+  X,
+  Settings as SettingsIcon,
+  CalendarClock,
+} from "lucide-react";
+import calendarData from "../data/calendar-2026.json";
+import type {
+  AcademicCalendar,
+  Assignment,
+  Course,
+  Lesson,
+  LessonStatus,
+  Notebook,
+  Program,
+} from "../lib/types";
+import { exportBackup, importBackup, useAppState } from "../lib/store";
+import { regenerateAllLessons } from "../lib/generateLessons";
+import { CoursesPanel } from "../features/courses/CoursesPanel";
+import { CalendarPanel } from "../features/calendar/CalendarPanel";
+import { TodayPanel } from "../features/today/TodayPanel";
+import { SettingsPanel } from "../features/settings/SettingsPanel";
+import { todayISO, formatBRLong } from "../lib/date";
+import { DockView } from "./DockView";
+import { hasShell, shell, type ShellMode } from "../lib/semestraBridge";
+import { currentTerm, extractTerms } from "../lib/terms";
+
+const CAL: AcademicCalendar = calendarData as AcademicCalendar;
+const TERMS = extractTerms(CAL);
+
+type Tab = "hoje" | "disciplinas" | "calendario";
+
+export default function App() {
+  const { state, update, reset } = useAppState();
+  const [tab, setTab] = useState<Tab>("hoje");
+  const [mode, setMode] = useState<ShellMode>("panel");
+  const [side, setSide] = useState<"left" | "right">("right");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const inShell = hasShell();
+
+  // Hook into Electron mode changes.
+  useEffect(() => {
+    if (!inShell) return;
+    let off: (() => void) | undefined;
+    shell.getState().then((s) => {
+      if (s) {
+        setMode(s.mode);
+        setSide(s.side);
+      }
+    });
+    off = shell.onMode((m) => setMode(m));
+    return () => off?.();
+  }, [inShell]);
+
+  // Regenerate lesson occurrences whenever the course list changes.
+  useEffect(() => {
+    const next = regenerateAllLessons(state.courses, CAL, state.lessons);
+    if (
+      next.length !== state.lessons.length ||
+      next.some(
+        (l, i) =>
+          state.lessons[i]?.id !== l.id ||
+          state.lessons[i]?.status !== l.status
+      )
+    ) {
+      update({ lessons: next });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.courses]);
+
+  const addCourses = (newOnes: Course[]) =>
+    update((p) => ({ courses: [...p.courses, ...newOnes] }));
+
+  const updateCourse = (id: string, patch: Partial<Course>) =>
+    update((p) => ({
+      courses: p.courses.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+      lessons:
+        patch.link !== undefined
+          ? p.lessons.map((l) =>
+              l.courseId === id ? { ...l, link: patch.link ?? l.link } : l
+            )
+          : p.lessons,
+    }));
+
+  const deleteCourse = (id: string) =>
+    update((p) => ({
+      courses: p.courses.filter((c) => c.id !== id),
+      lessons: p.lessons.filter((l) => l.courseId !== id),
+      notebooks: p.notebooks.filter((n) => n.courseId !== id),
+    }));
+
+  const setLessonStatus = (lessonId: string, status: LessonStatus) =>
+    update((p) => ({
+      lessons: p.lessons.map((l) =>
+        l.id === lessonId ? { ...l, status } : l
+      ),
+    }));
+
+  const addLesson = (l: Lesson) =>
+    update((p) => ({
+      lessons: [...p.lessons, l].sort((a, b) =>
+        a.date.localeCompare(b.date)
+      ),
+    }));
+
+  const addAssignment = (a: Assignment) =>
+    update((p) => ({ assignments: [...p.assignments, a] }));
+
+  const updateAssignment = (id: string, patch: Partial<Assignment>) =>
+    update((p) => ({
+      assignments: p.assignments.map((a) =>
+        a.id === id ? { ...a, ...patch } : a
+      ),
+    }));
+
+  const deleteAssignment = (id: string) =>
+    update((p) => ({
+      assignments: p.assignments.filter((a) => a.id !== id),
+    }));
+
+  const saveProgram = (prog: Program) =>
+    update((p) => {
+      const exists = p.programs.some((x) => x.id === prog.id);
+      return {
+        programs: exists
+          ? p.programs.map((x) => (x.id === prog.id ? prog : x))
+          : [...p.programs, prog],
+      };
+    });
+
+  const deleteProgram = (id: string) =>
+    update((p) => ({
+      programs: p.programs.filter((x) => x.id !== id),
+      courses: p.courses.map((c) =>
+        c.programId === id ? { ...c, programId: undefined } : c
+      ),
+    }));
+
+  const handleExport = () => {
+    const blob = new Blob([exportBackup(state)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `semestra-backup-${todayISO()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportBackup = async () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/json";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const text = await file.text();
+      const parsed = importBackup(text);
+      if (!parsed) {
+        alert("Arquivo inválido.");
+        return;
+      }
+      update(parsed);
+    };
+    input.click();
+  };
+
+  // ------ DOCK MODE ------
+  if (mode === "dock") {
+    return (
+      <DockView lessons={state.lessons} courses={state.courses} side={side} />
+    );
+  }
+
+  const compact = mode === "panel";
+
+  const tabButton = (id: Tab, label: string, Icon: typeof BookOpen) => (
+    <button
+      key={id}
+      onClick={() => setTab(id)}
+      className={`inline-flex items-center gap-2 px-2 py-1.5 text-sm rounded-md ${
+        tab === id
+          ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+          : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+      }`}
+      title={label}
+    >
+      <Icon className="h-4 w-4" />
+      {!compact && <span>{label}</span>}
+    </button>
+  );
+
+  const currentTermLabel = currentTerm(TERMS, todayISO())?.label;
+
+  return (
+    <div className="min-h-screen">
+      <header
+        className="sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur"
+        style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
+      >
+        <div
+          className={`max-w-5xl mx-auto px-3 py-2 flex items-center gap-2 ${
+            compact ? "flex-wrap" : ""
+          }`}
+          style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+        >
+          <div
+            className="flex items-center gap-2 min-w-0"
+            style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
+          >
+            <Sparkles className="h-5 w-5 text-amber-500 shrink-0" />
+            <div className="min-w-0 pr-2">
+              <div className="font-semibold leading-none">Semestra</div>
+              <div className="text-[11px] text-slate-500 mt-0.5 truncate">
+                {formatBRLong(todayISO())}
+              </div>
+            </div>
+          </div>
+
+          {inShell && (
+            <div
+              className="flex items-center gap-0.5 ml-1 border-l border-slate-200 dark:border-slate-800 pl-2"
+              style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+            >
+              <button
+                type="button"
+                onClick={() => shell.setMode("dock")}
+                className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
+                title="Recolher para barra lateral"
+              >
+                <Minimize2 className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  shell.setMode(mode === "full" ? "panel" : "full")
+                }
+                className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
+                title={
+                  mode === "full"
+                    ? "Voltar ao painel"
+                    : "Abrir janela completa"
+                }
+              >
+                {mode === "full" ? (
+                  <Columns2 className="h-4 w-4" />
+                ) : (
+                  <Maximize2 className="h-4 w-4" />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const next = await shell.toggleSide();
+                  if (next) setSide(next);
+                }}
+                className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
+                title="Trocar lado da tela"
+              >
+                <Columns2 className="h-4 w-4 rotate-180" />
+              </button>
+              <button
+                type="button"
+                onClick={() => shell.hide()}
+                className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
+                title="Ocultar (Ctrl+Shift+Space)"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+
+          <nav className="ml-auto flex items-center gap-1">
+            {tabButton("hoje", "Hoje", CalendarClock)}
+            {tabButton("disciplinas", "Disciplinas", BookOpen)}
+            {tabButton("calendario", "Calendário", CalendarDays)}
+          </nav>
+
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
+            title="Configurações"
+          >
+            <SettingsIcon className="h-4 w-4" />
+          </button>
+        </div>
+      </header>
+
+      <main
+        className={`mx-auto px-3 py-4 space-y-5 ${
+          compact ? "max-w-full" : "max-w-5xl"
+        }`}
+      >
+        {state.courses.length === 0 && (
+          <div
+            className="rounded-xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 p-4 text-sm cursor-pointer"
+            onClick={() => setSettingsOpen(true)}
+          >
+            Nenhuma disciplina cadastrada. Abra <strong>Configurações</strong>{" "}
+            (ícone de engrenagem) para importar do WhatsApp ou cadastrar
+            instituições.
+          </div>
+        )}
+
+        {tab === "hoje" && (
+          <TodayPanel
+            lessons={state.lessons}
+            courses={state.courses}
+            assignments={state.assignments}
+            programs={state.programs}
+            onSetLessonStatus={setLessonStatus}
+            onAddLesson={addLesson}
+            onAddAssignment={addAssignment}
+            onUpdateAssignment={updateAssignment}
+            onDeleteAssignment={deleteAssignment}
+          />
+        )}
+
+        {tab === "disciplinas" && (
+          <CoursesPanel
+            courses={state.courses}
+            lessons={state.lessons}
+            terms={TERMS}
+            programs={state.programs}
+            notebooks={state.notebooks}
+            onUpdate={updateCourse}
+            onDelete={deleteCourse}
+            onSetLessonStatus={setLessonStatus}
+            onNotebooksChange={(next: Notebook[]) =>
+              update({ notebooks: next })
+            }
+          />
+        )}
+
+        {tab === "calendario" && (
+          <CalendarPanel
+            calendar={CAL}
+            courses={state.courses}
+            lessons={state.lessons}
+          />
+        )}
+      </main>
+
+      {settingsOpen && (
+        <SettingsPanel
+          programs={state.programs}
+          courses={state.courses}
+          terms={TERMS}
+          currentTermLabel={currentTermLabel}
+          onClose={() => setSettingsOpen(false)}
+          onSaveProgram={saveProgram}
+          onDeleteProgram={deleteProgram}
+          onImportCourses={addCourses}
+          onExport={handleExport}
+          onImportBackup={handleImportBackup}
+          onReset={reset}
+        />
+      )}
+
+      <footer className="max-w-5xl mx-auto px-4 pb-6 text-center text-xs text-slate-500">
+        Dados locais · {CAL.source}
+      </footer>
+    </div>
+  );
+}

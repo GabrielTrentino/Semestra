@@ -1,0 +1,850 @@
+{
+  "year": 2026,
+  "source": "INFNET - Graduação 2026",
+  "weeks": [
+    {
+      "label": "FÉRIAS",
+      "week": "",
+      "kind": "ferias",
+      "dates": {
+        "SEG": "2025-12-29",
+        "TER": "2025-12-30",
+        "QUA": "2025-12-31",
+        "QUI": "2026-01-01",
+        "SEX": "2026-01-02",
+        "SAB": "2026-01-03"
+      },
+      "observacoes": "INSTITUIÇÃO FECHADA.\nNÃO É POSSÍVEL FAZER REQUERIMENTOS."
+    },
+    {
+      "label": "RECESSO/RECESSO",
+      "week": "",
+      "kind": "recesso",
+      "dates": {
+        "SEG": "2026-01-05",
+        "TER": "2026-01-06",
+        "QUA": "2026-01-07",
+        "QUI": "2026-01-08",
+        "SEX": "2026-01-09",
+        "SAB": "2026-01-10"
+      },
+      "observacoes": "INSTITUIÇÃO FECHADA ATÉ 6/01.\nNÃO É POSSÍVEL FAZER REQUERIMENTOS."
+    },
+    {
+      "label": "RECESSO",
+      "week": "",
+      "kind": "recesso",
+      "dates": {
+        "SEG": "2026-01-12",
+        "TER": "2026-01-13",
+        "QUA": "2026-01-14",
+        "QUI": "2026-01-15",
+        "SEX": "2026-01-16",
+        "SAB": "2026-01-17"
+      },
+      "observacoes": "INSTITUIÇÃO ABERTA, MAS SEM AULAS DE GRADUAÇÃO"
+    },
+    {
+      "label": "RECESSO",
+      "week": "",
+      "kind": "recesso",
+      "dates": {
+        "SEG": "2026-01-19",
+        "TER": "2026-01-20",
+        "QUA": "2026-01-21",
+        "QUI": "2026-01-22",
+        "SEX": "2026-01-23",
+        "SAB": "2026-01-24"
+      },
+      "observacoes": "INSTITUIÇÃO ABERTA, SEM AULAS DE GRADUAÇÃO.\n20: FERIADO DE SÃO SEBASTIÃO"
+    },
+    {
+      "label": "2026 Trim 1",
+      "week": "Semana 1",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-01-26",
+        "TER": "2026-01-27",
+        "QUA": "2026-01-28",
+        "QUI": "2026-01-29",
+        "SEX": "2026-01-30",
+        "SAB": "2026-01-31"
+      },
+      "observacoes": "PERÍODO PARA REQUISITAR A REAVALIAÇÃO DE DISCIPLINAS EM 2026.1S."
+    },
+    {
+      "label": "2026 Trim 1",
+      "week": "Semana 2",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-02-02",
+        "TER": "2026-02-03",
+        "QUA": "2026-02-04",
+        "QUI": "2026-02-05",
+        "SEX": "2026-02-06",
+        "SAB": "2026-02-07"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 1",
+      "week": "Semana 3",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-02-09",
+        "TER": "2026-02-10",
+        "QUA": "2026-02-11",
+        "QUI": "2026-02-12",
+        "SEX": "2026-02-13",
+        "SAB": "2026-02-14"
+      },
+      "observacoes": "14: SÁBADO DE CARNAVAL"
+    },
+    {
+      "label": "2026 Trim 1",
+      "week": "Semana 4",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-02-16",
+        "TER": "2026-02-17",
+        "QUA": "2026-02-18",
+        "QUI": "2026-02-19",
+        "SEX": "2026-02-20",
+        "SAB": "2026-02-21"
+      },
+      "observacoes": "16, 17, 18: CARNAVAL"
+    },
+    {
+      "label": "2026 Trim 1",
+      "week": "Semana 5",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-02-23",
+        "TER": "2026-02-24",
+        "QUA": "2026-02-25",
+        "QUI": "2026-02-26",
+        "SEX": "2026-02-27",
+        "SAB": "2026-02-28"
+      },
+      "observacoes": "23: INÍCIO DAS AULAS PARA NOVOS ALUNOS PRESENCIAIS DA FACULDADE INFNET"
+    },
+    {
+      "label": "2026 Trim 1",
+      "week": "Semana 6",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-03-02",
+        "TER": "2026-03-03",
+        "QUA": "2026-03-04",
+        "QUI": "2026-03-05",
+        "SEX": "2026-03-06",
+        "SAB": "2026-03-07"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 1",
+      "week": "Semana 7",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-03-09",
+        "TER": "2026-03-10",
+        "QUA": "2026-03-11",
+        "QUI": "2026-03-12",
+        "SEX": "2026-03-13",
+        "SAB": "2026-03-14"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 1",
+      "week": "Semana 8",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-03-16",
+        "TER": "2026-03-17",
+        "QUA": "2026-03-18",
+        "QUI": "2026-03-19",
+        "SEX": "2026-03-20",
+        "SAB": "2026-03-21"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 1",
+      "week": "Semana 9",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-03-23",
+        "TER": "2026-03-24",
+        "QUA": "2026-03-25",
+        "QUI": "2026-03-26",
+        "SEX": "2026-03-27",
+        "SAB": "2026-03-28"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 1",
+      "week": "Semana 10",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-03-30",
+        "TER": "2026-03-31",
+        "QUA": "2026-04-01",
+        "QUI": "2026-04-02",
+        "SEX": "2026-04-03",
+        "SAB": "2026-04-04"
+      },
+      "observacoes": "3, 4, 5: PÁSCOA\n30: INÍCIO DAS AULAS PARA NOVOS ALUNOS PRESENCIAIS DA ECDD"
+    },
+    {
+      "label": "2026 Trim 1",
+      "week": "Semana 11",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-04-06",
+        "TER": "2026-04-07",
+        "QUA": "2026-04-08",
+        "QUI": "2026-04-09",
+        "SEX": "2026-04-10",
+        "SAB": "2026-04-11"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 2",
+      "week": "Semana 1",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-04-13",
+        "TER": "2026-04-14",
+        "QUA": "2026-04-15",
+        "QUI": "2026-04-16",
+        "SEX": "2026-04-17",
+        "SAB": "2026-04-18"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 2",
+      "week": "Semana 2",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-04-20",
+        "TER": "2026-04-21",
+        "QUA": "2026-04-22",
+        "QUI": "2026-04-23",
+        "SEX": "2026-04-24",
+        "SAB": "2026-04-25"
+      },
+      "observacoes": "21: TIRADENTES | 23: SÃO JORGE\n20, 22 e 24: AULAS DA MODALIDADE PRESENCIAL PELO ZOOM"
+    },
+    {
+      "label": "2026 Trim 2",
+      "week": "Semana 3",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-04-27",
+        "TER": "2026-04-28",
+        "QUA": "2026-04-29",
+        "QUI": "2026-04-30",
+        "SEX": "2026-05-01",
+        "SAB": "2026-05-02"
+      },
+      "observacoes": "1: TRABALHO"
+    },
+    {
+      "label": "2026 Trim 2",
+      "week": "Semana 4",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-05-04",
+        "TER": "2026-05-05",
+        "QUA": "2026-05-06",
+        "QUI": "2026-05-07",
+        "SEX": "2026-05-08",
+        "SAB": "2026-05-09"
+      },
+      "observacoes": "8: EVENTO \"APRESENTAÇÃO DE PORTFÓLIO DE PROJETOS\""
+    },
+    {
+      "label": "2026 Trim 2",
+      "week": "Semana 5",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-05-11",
+        "TER": "2026-05-12",
+        "QUA": "2026-05-13",
+        "QUI": "2026-05-14",
+        "SEX": "2026-05-15",
+        "SAB": "2026-05-16"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 2",
+      "week": "Semana 6",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-05-18",
+        "TER": "2026-05-19",
+        "QUA": "2026-05-20",
+        "QUI": "2026-05-21",
+        "SEX": "2026-05-22",
+        "SAB": "2026-05-23"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 2",
+      "week": "Semana 7",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-05-25",
+        "TER": "2026-05-26",
+        "QUA": "2026-05-27",
+        "QUI": "2026-05-28",
+        "SEX": "2026-05-29",
+        "SAB": "2026-05-30"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 2",
+      "week": "Semana 8",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-06-01",
+        "TER": "2026-06-02",
+        "QUA": "2026-06-03",
+        "QUI": "2026-06-04",
+        "SEX": "2026-06-05",
+        "SAB": "2026-06-06"
+      },
+      "observacoes": "4: CORPUS CHRISTI\n5: AULAS DA MODALIDADE PRESENCIAL PELO ZOOM"
+    },
+    {
+      "label": "2026 Trim 2",
+      "week": "Semana 9",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-06-08",
+        "TER": "2026-06-09",
+        "QUA": "2026-06-10",
+        "QUI": "2026-06-11",
+        "SEX": "2026-06-12",
+        "SAB": "2026-06-13"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 2",
+      "week": "Semana 10",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-06-15",
+        "TER": "2026-06-16",
+        "QUA": "2026-06-17",
+        "QUI": "2026-06-18",
+        "SEX": "2026-06-19",
+        "SAB": "2026-06-20"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 2",
+      "week": "Semana 11",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-06-22",
+        "TER": "2026-06-23",
+        "QUA": "2026-06-24",
+        "QUI": "2026-06-25",
+        "SEX": "2026-06-26",
+        "SAB": "2026-06-27"
+      },
+      "observacoes": "SISTEMA DE REQUERIMENTOS FECHADO PARA AS FÉRIAS"
+    },
+    {
+      "label": "FÉRIAS",
+      "week": "",
+      "kind": "ferias",
+      "dates": {
+        "SEG": "2026-06-29",
+        "TER": "2026-06-30",
+        "QUA": "2026-07-01",
+        "QUI": "2026-07-02",
+        "SEX": "2026-07-03",
+        "SAB": "2026-07-04"
+      },
+      "observacoes": "INSTITUIÇÃO FECHADA, SEM ATENDIMENTO.\nNÃO É POSSÍVEL FAZER REQUERIMENTOS."
+    },
+    {
+      "label": "FÉRIAS",
+      "week": "",
+      "kind": "ferias",
+      "dates": {
+        "SEG": "2026-07-06",
+        "TER": "2026-07-07",
+        "QUA": "2026-07-08",
+        "QUI": "2026-07-09",
+        "SEX": "2026-07-10",
+        "SAB": "2026-07-11"
+      },
+      "observacoes": "INSTITUIÇÃO FECHADA, SEM ATENDIMENTO.\nNÃO É POSSÍVEL FAZER REQUERIMENTOS."
+    },
+    {
+      "label": "RECESSO",
+      "week": "",
+      "kind": "recesso",
+      "dates": {
+        "SEG": "2026-07-13",
+        "TER": "2026-07-14",
+        "QUA": "2026-07-15",
+        "QUI": "2026-07-16",
+        "SEX": "2026-07-17",
+        "SAB": "2026-07-18"
+      },
+      "observacoes": "INSTITUIÇÃO ABERTA, MAS SEM AULAS."
+    },
+    {
+      "label": "2026 Trim 3",
+      "week": "Semana 1",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-07-20",
+        "TER": "2026-07-21",
+        "QUA": "2026-07-22",
+        "QUI": "2026-07-23",
+        "SEX": "2026-07-24",
+        "SAB": "2026-07-25"
+      },
+      "observacoes": "PERÍODO PARA REQUISITAR A REAVALIAÇÃO DE DISCIPLINAS EM 2026.2S."
+    },
+    {
+      "label": "2026 Trim 3",
+      "week": "Semana 2",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-07-27",
+        "TER": "2026-07-28",
+        "QUA": "2026-07-29",
+        "QUI": "2026-07-30",
+        "SEX": "2026-07-31",
+        "SAB": "2026-08-01"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 3",
+      "week": "Semana 3",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-08-03",
+        "TER": "2026-08-04",
+        "QUA": "2026-08-05",
+        "QUI": "2026-08-06",
+        "SEX": "2026-08-07",
+        "SAB": "2026-08-08"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 3",
+      "week": "Semana 4",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-08-10",
+        "TER": "2026-08-11",
+        "QUA": "2026-08-12",
+        "QUI": "2026-08-13",
+        "SEX": "2026-08-14",
+        "SAB": "2026-08-15"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 3",
+      "week": "Semana 5",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-08-17",
+        "TER": "2026-08-18",
+        "QUA": "2026-08-19",
+        "QUI": "2026-08-20",
+        "SEX": "2026-08-21",
+        "SAB": "2026-08-22"
+      },
+      "observacoes": "17: INÍCIO DAS AULAS PARA NOVOS ALUNOS PRESENCIAIS DA FACULDADE INFNET"
+    },
+    {
+      "label": "2026 Trim 3",
+      "week": "Semana 6",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-08-24",
+        "TER": "2026-08-25",
+        "QUA": "2026-08-26",
+        "QUI": "2026-08-27",
+        "SEX": "2026-08-28",
+        "SAB": "2026-08-29"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 3",
+      "week": "Semana 7",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-08-31",
+        "TER": "2026-09-01",
+        "QUA": "2026-09-02",
+        "QUI": "2026-09-03",
+        "SEX": "2026-09-04",
+        "SAB": "2026-09-05"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 3",
+      "week": "Semana 8",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-09-07",
+        "TER": "2026-09-08",
+        "QUA": "2026-09-09",
+        "QUI": "2026-09-10",
+        "SEX": "2026-09-11",
+        "SAB": "2026-09-12"
+      },
+      "observacoes": "7: INDEPENDÊNCIA"
+    },
+    {
+      "label": "2026 Trim 3",
+      "week": "Semana 9",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-09-14",
+        "TER": "2026-09-15",
+        "QUA": "2026-09-16",
+        "QUI": "2026-09-17",
+        "SEX": "2026-09-18",
+        "SAB": "2026-09-19"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 3",
+      "week": "Semana 10",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-09-21",
+        "TER": "2026-09-22",
+        "QUA": "2026-09-23",
+        "QUI": "2026-09-24",
+        "SEX": "2026-09-25",
+        "SAB": "2026-09-26"
+      },
+      "observacoes": "21: INÍCIO DAS AULAS PARA NOVOS ALUNOS PRESENCIAIS DA ECDD"
+    },
+    {
+      "label": "2026 Trim 3",
+      "week": "Semana 11",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-09-28",
+        "TER": "2026-09-29",
+        "QUA": "2026-09-30",
+        "QUI": "2026-10-01",
+        "SEX": "2026-10-02",
+        "SAB": "2026-10-03"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 4",
+      "week": "Semana 1",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-10-05",
+        "TER": "2026-10-06",
+        "QUA": "2026-10-07",
+        "QUI": "2026-10-08",
+        "SEX": "2026-10-09",
+        "SAB": "2026-10-10"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 4",
+      "week": "Semana 2",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-10-12",
+        "TER": "2026-10-13",
+        "QUA": "2026-10-14",
+        "QUI": "2026-10-15",
+        "SEX": "2026-10-16",
+        "SAB": "2026-10-17"
+      },
+      "observacoes": "12: NOSSA SENHORA | 15: DIA DO PROFESSOR E DO ADMINISTRADOR ESCOLAR"
+    },
+    {
+      "label": "2026 Trim 4",
+      "week": "Semana 3",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-10-19",
+        "TER": "2026-10-20",
+        "QUA": "2026-10-21",
+        "QUI": "2026-10-22",
+        "SEX": "2026-10-23",
+        "SAB": "2026-10-24"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 4",
+      "week": "Semana 4",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-10-26",
+        "TER": "2026-10-27",
+        "QUA": "2026-10-28",
+        "QUI": "2026-10-29",
+        "SEX": "2026-10-30",
+        "SAB": "2026-10-31"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 4",
+      "week": "Semana 5",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-11-02",
+        "TER": "2026-11-03",
+        "QUA": "2026-11-04",
+        "QUI": "2026-11-05",
+        "SEX": "2026-11-06",
+        "SAB": "2026-11-07"
+      },
+      "observacoes": "2: FINADOS | 6: EVENTO \"APRESENTAÇÃO DE PORTFÓLIO DE PROJETOS\""
+    },
+    {
+      "label": "2026 Trim 4",
+      "week": "Semana 6",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-11-09",
+        "TER": "2026-11-10",
+        "QUA": "2026-11-11",
+        "QUI": "2026-11-12",
+        "SEX": "2026-11-13",
+        "SAB": "2026-11-14"
+      },
+      "observacoes": "15: PROCLAMAÇÃO DA REPÚBLICA"
+    },
+    {
+      "label": "2026 Trim 4",
+      "week": "Semana 7",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-11-16",
+        "TER": "2026-11-17",
+        "QUA": "2026-11-18",
+        "QUI": "2026-11-19",
+        "SEX": "2026-11-20",
+        "SAB": "2026-11-21"
+      },
+      "observacoes": "20: CONSCIÊNCIA NEGRA"
+    },
+    {
+      "label": "2026 Trim 4",
+      "week": "Semana 8",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-11-23",
+        "TER": "2026-11-24",
+        "QUA": "2026-11-25",
+        "QUI": "2026-11-26",
+        "SEX": "2026-11-27",
+        "SAB": "2026-11-28"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 4",
+      "week": "Semana 9",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-11-30",
+        "TER": "2026-12-01",
+        "QUA": "2026-12-02",
+        "QUI": "2026-12-03",
+        "SEX": "2026-12-04",
+        "SAB": "2026-12-05"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 4",
+      "week": "Semana 10",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-12-07",
+        "TER": "2026-12-08",
+        "QUA": "2026-12-09",
+        "QUI": "2026-12-10",
+        "SEX": "2026-12-11",
+        "SAB": "2026-12-12"
+      },
+      "observacoes": ""
+    },
+    {
+      "label": "2026 Trim 4",
+      "week": "Semana 11",
+      "kind": "aulas",
+      "dates": {
+        "SEG": "2026-12-14",
+        "TER": "2026-12-15",
+        "QUA": "2026-12-16",
+        "QUI": "2026-12-17",
+        "SEX": "2026-12-18",
+        "SAB": "2026-12-19"
+      },
+      "observacoes": "SISTEMA DE REQUERIMENTOS FECHADO PARA AS FÉRIAS"
+    },
+    {
+      "label": "FÉRIAS",
+      "week": "",
+      "kind": "ferias",
+      "dates": {
+        "SEG": "2026-12-21",
+        "TER": "2026-12-22",
+        "QUA": "2026-12-23",
+        "QUI": "2026-12-24",
+        "SEX": "2026-12-25",
+        "SAB": "2026-12-26"
+      },
+      "observacoes": "INSTITUIÇÃO FECHADA, SEM ATENDIMENTO.\nNÃO É POSSÍVEL FAZER REQUERIMENTOS."
+    },
+    {
+      "label": "FÉRIAS",
+      "week": "",
+      "kind": "ferias",
+      "dates": {
+        "SEG": "2026-12-28",
+        "TER": "2026-12-29",
+        "QUA": "2026-12-30",
+        "QUI": "2026-12-31",
+        "SEX": "2027-01-01",
+        "SAB": "2027-01-02"
+      },
+      "observacoes": "INSTITUIÇÃO FECHADA, SEM ATENDIMENTO.\nNÃO É POSSÍVEL FAZER REQUERIMENTOS."
+    }
+  ],
+  "holidays": [
+    {
+      "date": "2026-01-20",
+      "description": "FERIADO DE SÃO SEBASTIÃO"
+    },
+    {
+      "date": "2026-02-14",
+      "description": "SÁBADO DE CARNAVAL"
+    },
+    {
+      "date": "2026-02-16",
+      "description": "CARNAVAL"
+    },
+    {
+      "date": "2026-02-17",
+      "description": "CARNAVAL"
+    },
+    {
+      "date": "2026-02-18",
+      "description": "CARNAVAL"
+    },
+    {
+      "date": "2026-02-23",
+      "description": "INÍCIO DAS AULAS PARA NOVOS ALUNOS PRESENCIAIS DA FACULDADE INFNET"
+    },
+    {
+      "date": "2026-03-03",
+      "description": "PÁSCOA"
+    },
+    {
+      "date": "2026-03-04",
+      "description": "PÁSCOA"
+    },
+    {
+      "date": "2026-03-05",
+      "description": "PÁSCOA"
+    },
+    {
+      "date": "2026-03-30",
+      "description": "INÍCIO DAS AULAS PARA NOVOS ALUNOS PRESENCIAIS DA ECDD"
+    },
+    {
+      "date": "2026-04-21",
+      "description": "TIRADENTES | 23: SÃO JORGE"
+    },
+    {
+      "date": "2026-04-20",
+      "description": "AULAS DA MODALIDADE PRESENCIAL PELO ZOOM"
+    },
+    {
+      "date": "2026-04-22",
+      "description": "AULAS DA MODALIDADE PRESENCIAL PELO ZOOM"
+    },
+    {
+      "date": "2026-04-24",
+      "description": "AULAS DA MODALIDADE PRESENCIAL PELO ZOOM"
+    },
+    {
+      "date": "2026-04-01",
+      "description": "TRABALHO"
+    },
+    {
+      "date": "2026-05-08",
+      "description": "EVENTO \"APRESENTAÇÃO DE PORTFÓLIO DE PROJETOS\""
+    },
+    {
+      "date": "2026-06-04",
+      "description": "CORPUS CHRISTI"
+    },
+    {
+      "date": "2026-06-05",
+      "description": "AULAS DA MODALIDADE PRESENCIAL PELO ZOOM"
+    },
+    {
+      "date": "2026-08-17",
+      "description": "INÍCIO DAS AULAS PARA NOVOS ALUNOS PRESENCIAIS DA FACULDADE INFNET"
+    },
+    {
+      "date": "2026-09-07",
+      "description": "INDEPENDÊNCIA"
+    },
+    {
+      "date": "2026-09-21",
+      "description": "INÍCIO DAS AULAS PARA NOVOS ALUNOS PRESENCIAIS DA ECDD"
+    },
+    {
+      "date": "2026-10-12",
+      "description": "NOSSA SENHORA | 15: DIA DO PROFESSOR E DO ADMINISTRADOR ESCOLAR"
+    },
+    {
+      "date": "2026-11-02",
+      "description": "FINADOS | 6: EVENTO \"APRESENTAÇÃO DE PORTFÓLIO DE PROJETOS\""
+    },
+    {
+      "date": "2026-11-15",
+      "description": "PROCLAMAÇÃO DA REPÚBLICA"
+    },
+    {
+      "date": "2026-11-20",
+      "description": "CONSCIÊNCIA NEGRA"
+    }
+  ]
+}
