@@ -10,7 +10,7 @@ type ShellState = {
   platform: string;
 };
 
-export type RunLanguage = "csharp" | "java";
+export type RunLanguage = "csharp" | "java" | "python";
 
 export type RunResult = {
   stdout: string;
@@ -24,6 +24,7 @@ export type RuntimeStatus = {
   dotnet: string | null;
   dotnetScript: string | null;
   javac: string | null;
+  python: string | null;
 };
 
 export type DataLocation = {

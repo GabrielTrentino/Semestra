@@ -5,7 +5,8 @@ import {
   Sparkles,
   Maximize2,
   Minimize2,
-  Columns2,
+  ArrowLeftRight,
+  Square,
   X,
   Settings as SettingsIcon,
   CalendarClock,
@@ -271,6 +272,17 @@ export default function App() {
             >
               <button
                 type="button"
+                onClick={async () => {
+                  const next = await shell.toggleSide();
+                  if (next) setSide(next);
+                }}
+                className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
+                title="Trocar lado da tela"
+              >
+                <ArrowLeftRight className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
                 onClick={() => shell.setMode("dock")}
                 className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
                 title="Recolher para barra lateral"
@@ -290,26 +302,15 @@ export default function App() {
                 }
               >
                 {mode === "full" ? (
-                  <Columns2 className="h-4 w-4" />
+                  <Square className="h-4 w-4" />
                 ) : (
                   <Maximize2 className="h-4 w-4" />
                 )}
               </button>
               <button
                 type="button"
-                onClick={async () => {
-                  const next = await shell.toggleSide();
-                  if (next) setSide(next);
-                }}
-                className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
-                title="Trocar lado da tela"
-              >
-                <Columns2 className="h-4 w-4 rotate-180" />
-              </button>
-              <button
-                type="button"
                 onClick={() => shell.hide()}
-                className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-red-600"
                 title="Ocultar (Ctrl+Shift+Space)"
               >
                 <X className="h-4 w-4" />

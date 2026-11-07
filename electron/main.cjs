@@ -569,6 +569,33 @@ async function runCsharp(source) {
   return second;
 }
 
+async function runPython(source) {
+  const dir = tempDirFor("py");
+  const file = path.join(dir, "main.py");
+  fs.writeFileSync(file, source, "utf8");
+  const exe = process.platform === "win32" ? "python" : "python3";
+  const result = await runProcess(exe, [file], {
+    cwd: dir,
+    timeoutMs: RUN_TIMEOUT_MS,
+  });
+  cleanupLater(dir);
+  if (result.error && /not found|ENOENT/i.test(result.error)) {
+    // Fall back to 'py' launcher on Windows.
+    if (process.platform === "win32") {
+      const fb = await runProcess("py", [file], {
+        cwd: dir,
+        timeoutMs: RUN_TIMEOUT_MS,
+      });
+      if (!fb.error) return fb;
+    }
+    return {
+      ...result,
+      error: "Python não encontrado no PATH. Instale em https://www.python.org/.",
+    };
+  }
+  return result;
+}
+
 async function runJava(source) {
   const dir = tempDirFor("java");
   const hasMainClass = /\bclass\s+Main\b/.test(source);
@@ -631,6 +658,7 @@ ipcMain.handle("semestra:run-code", async (_e, payload) => {
   try {
     if (language === "csharp") return await runCsharp(source);
     if (language === "java") return await runJava(source);
+    if (language === "python") return await runPython(source);
     return {
       stdout: "",
       stderr: "",
@@ -653,12 +681,15 @@ ipcMain.handle("semestra:check-runtimes", async () => {
   const dotnet = await runProcess("dotnet", ["--version"], { timeoutMs: 5_000 });
   const dotnetScript = await runProcess("dotnet", ["script", "--version"], { timeoutMs: 5_000 });
   const javac = await runProcess("javac", ["-version"], { timeoutMs: 5_000 });
+  const pyExe = process.platform === "win32" ? "python" : "python3";
+  const python = await runProcess(pyExe, ["--version"], { timeoutMs: 5_000 });
   return {
     dotnet: !dotnet.error ? (dotnet.stdout + dotnet.stderr).trim() : null,
     dotnetScript: !dotnetScript.error && dotnetScript.exitCode === 0
       ? (dotnetScript.stdout + dotnetScript.stderr).trim()
       : null,
     javac: !javac.error ? (javac.stdout + javac.stderr).trim() : null,
+    python: !python.error ? (python.stdout + python.stderr).trim() : null,
   };
 });
 

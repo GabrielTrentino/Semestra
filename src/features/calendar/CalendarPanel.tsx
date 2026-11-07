@@ -67,8 +67,8 @@ export function CalendarPanel({ calendar, courses, lessons }: Props) {
         )}
       </header>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm border-collapse">
+      <div className="overflow-x-auto -mx-3 px-3 pb-2">
+        <table className="text-sm border-collapse min-w-[760px] w-max">
           <thead>
             <tr>
               <th className="text-left font-medium text-xs text-slate-500 pb-2 pr-3">

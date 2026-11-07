@@ -89,7 +89,7 @@ export type NotebookBlock =
   | {
       id: string;
       kind: "code";
-      language: "csharp" | "java";
+      language: "csharp" | "java" | "python";
       source: string;
       lastRun?: {
         at: string;

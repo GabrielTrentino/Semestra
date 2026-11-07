@@ -88,8 +88,10 @@ export function SettingsPanel(props: Props) {
             {section === "instituicoes" && (
               <ProgramsEditor
                 programs={props.programs}
+                existingCourses={props.courses}
                 onSave={props.onSaveProgram}
                 onDelete={props.onDeleteProgram}
+                onImportCourses={props.onImportCourses}
               />
             )}
             {section === "whatsapp" && (
@@ -122,15 +124,53 @@ export function SettingsPanel(props: Props) {
   );
 }
 
+const INFNET_2026_CATALOG: { name: string }[] = [
+  { name: "Desenvolvimento de Serviços Web e Testes com Java" },
+  { name: "Desenvolvimento Web com .NET e Bases de Dados" },
+  { name: "Fundamentos de Desenvolvimento com C#" },
+  { name: "Fundamentos de Desenvolvimento com Java" },
+  { name: "Introdução à Programação com Python" },
+  { name: "Introdução a Visualização de Dados e SQL" },
+  { name: "Projeto de Bloco: Desenvolvimento Back-End" },
+  { name: "Python para Processamento de Dados" },
+  { name: "SQL e Modelagem Relacional" },
+];
+
 function ProgramsEditor({
   programs,
+  existingCourses,
   onSave,
   onDelete,
+  onImportCourses,
 }: {
   programs: Program[];
+  existingCourses: Course[];
   onSave: (p: Program) => void;
   onDelete: (id: string) => void;
+  onImportCourses: (cs: Course[]) => void;
 }) {
+  const infnetProgram = programs.find((p) => p.calendarId === "infnet-2026");
+  const existingNames = new Set(
+    existingCourses.map((c) => c.name.toLowerCase().trim())
+  );
+  const catalogToAdd = INFNET_2026_CATALOG.filter(
+    (c) => !existingNames.has(c.name.toLowerCase().trim())
+  );
+  const importCatalog = () => {
+    if (!infnetProgram) return;
+    const colors = COURSE_PALETTE;
+    const toAdd: Course[] = catalogToAdd.map((c, i) => ({
+      id: crypto.randomUUID(),
+      name: c.name,
+      color: colors[(existingCourses.length + i) % colors.length],
+      weekdays: [],
+      programId: infnetProgram.id,
+      termLabels: /projeto de bloco/i.test(c.name)
+        ? ["2026 Trim 3", "2026 Trim 4"]
+        : undefined,
+    }));
+    onImportCourses(toAdd);
+  };
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<Program>>({});
   const [adding, setAdding] = useState(false);
@@ -246,6 +286,35 @@ function ProgramsEditor({
         >
           <Plus className="h-4 w-4" /> Adicionar instituição
         </button>
+      )}
+
+      {infnetProgram && catalogToAdd.length > 0 && (
+        <div className="rounded-lg border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/40 p-3">
+          <div className="text-sm font-medium mb-1">
+            Catálogo INFNET 2026 — Eng. Software
+          </div>
+          <p className="text-xs text-slate-600 dark:text-slate-300 mb-2">
+            {catalogToAdd.length} disciplina
+            {catalogToAdd.length === 1 ? "" : "s"} do curso ainda não{" "}
+            {catalogToAdd.length === 1 ? "está cadastrada" : "estão cadastradas"}.
+            Inclui PB Back-End já marcado para Trim 3+4. Dias da semana e links
+            você preenche depois em Disciplinas.
+          </p>
+          <ul className="text-xs text-slate-600 dark:text-slate-300 mb-2 space-y-0.5 list-disc pl-4">
+            {catalogToAdd.map((c) => (
+              <li key={c.name}>{c.name}</li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            onClick={importCatalog}
+            className="rounded-md bg-blue-600 text-white px-3 py-1.5 text-xs font-medium"
+          >
+            Cadastrar {catalogToAdd.length}{" "}
+            {catalogToAdd.length === 1 ? "disciplina" : "disciplinas"} em{" "}
+            {infnetProgram.name}
+          </button>
+        </div>
       )}
     </div>
   );
