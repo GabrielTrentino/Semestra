@@ -9,6 +9,7 @@ import {
   X,
   Settings as SettingsIcon,
   CalendarClock,
+  Target,
 } from "lucide-react";
 import calendarData from "../data/calendar-2026.json";
 import type {
@@ -25,6 +26,7 @@ import { regenerateAllLessons } from "../lib/generateLessons";
 import { CoursesPanel } from "../features/courses/CoursesPanel";
 import { CalendarPanel } from "../features/calendar/CalendarPanel";
 import { TodayPanel } from "../features/today/TodayPanel";
+import { GoalsPanel } from "../features/goals/GoalsPanel";
 import { SettingsPanel } from "../features/settings/SettingsPanel";
 import { todayISO, formatBRLong } from "../lib/date";
 import { BubbleView } from "./BubbleView";
@@ -34,7 +36,7 @@ import { currentTerm, extractTerms } from "../lib/terms";
 const CAL: AcademicCalendar = calendarData as AcademicCalendar;
 const TERMS = extractTerms(CAL);
 
-type Tab = "hoje" | "disciplinas" | "calendario";
+type Tab = "hoje" | "metas" | "disciplinas" | "calendario";
 
 export default function App() {
   const { state, update, reset, status, pickFolder } = useAppState();
@@ -91,12 +93,22 @@ export default function App() {
       notebooks: p.notebooks.filter((n) => n.courseId !== id),
     }));
 
+  // Marcar como assistida carimba o dia em que isso aconteceu; qualquer
+  // outro status limpa o carimbo, senão o histórico diário mente.
   const setLessonStatus = (lessonId: string, status: LessonStatus) =>
     update((p) => ({
-      lessons: p.lessons.map((l) =>
-        l.id === lessonId ? { ...l, status } : l
-      ),
+      lessons: p.lessons.map((l) => {
+        if (l.id !== lessonId) return l;
+        if (status !== "assistida") {
+          const { watchedAt: _drop, ...rest } = l;
+          return { ...rest, status };
+        }
+        return { ...l, status, watchedAt: l.watchedAt ?? todayISO() };
+      }),
     }));
+
+  const setDailyGoal = (dailyGoal: number) =>
+    update((p) => ({ settings: { ...p.settings, dailyGoal } }));
 
   const addLesson = (l: Lesson) =>
     update((p) => ({
@@ -308,6 +320,7 @@ export default function App() {
 
           <nav className="ml-auto flex items-center gap-1">
             {tabButton("hoje", "Hoje", CalendarClock)}
+            {tabButton("metas", "Metas", Target)}
             {tabButton("disciplinas", "Disciplinas", BookOpen)}
             {tabButton("calendario", "Calendário", CalendarDays)}
           </nav>
@@ -350,6 +363,16 @@ export default function App() {
             onAddAssignment={addAssignment}
             onUpdateAssignment={updateAssignment}
             onDeleteAssignment={deleteAssignment}
+          />
+        )}
+
+        {tab === "metas" && (
+          <GoalsPanel
+            lessons={state.lessons}
+            courses={state.courses}
+            settings={state.settings}
+            onSetGoal={setDailyGoal}
+            onSetLessonStatus={setLessonStatus}
           />
         )}
 

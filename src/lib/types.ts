@@ -55,6 +55,10 @@ export type Lesson = {
   note?: string;
   /** Lições criadas à mão (fora do calendário recorrente). */
   oneOff?: boolean;
+  /** Dia em que a aula foi efetivamente assistida (YYYY-MM-DD). Diferente
+   *  de `date`, que é o dia em que a aula aconteceu/foi gravada. Só existe
+   *  enquanto o status for "assistida". */
+  watchedAt?: string;
 };
 
 export type AssignmentType =
@@ -131,3 +135,10 @@ export type AcademicCalendar = {
   weeks: AcademicWeek[];
   holidays: { date: string; description: string }[];
 };
+
+export type Settings = {
+  /** Quantas aulas o usuário pretende assistir por dia. 0 = sem meta. */
+  dailyGoal: number;
+};
+
+export const DEFAULT_SETTINGS: Settings = { dailyGoal: 2 };

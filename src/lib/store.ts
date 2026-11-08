@@ -5,7 +5,9 @@ import type {
   Lesson,
   Notebook,
   Program,
+  Settings,
 } from "./types";
+import { DEFAULT_SETTINGS } from "./types";
 import { hasShell, shell } from "./semestraBridge";
 
 const STORAGE_KEY = "semestra:state:v1";
@@ -16,6 +18,7 @@ export type AppState = {
   lessons: Lesson[];
   assignments: Assignment[];
   notebooks: Notebook[];
+  settings: Settings;
 };
 
 const EMPTY: AppState = {
@@ -32,6 +35,7 @@ const EMPTY: AppState = {
   lessons: [],
   assignments: [],
   notebooks: [],
+  settings: { ...DEFAULT_SETTINGS },
 };
 
 function migrate(raw: Partial<AppState> & { courses?: unknown[] }): AppState {
@@ -56,12 +60,28 @@ function migrate(raw: Partial<AppState> & { courses?: unknown[] }): AppState {
     } as Course;
   });
 
+  // Lessons saved before the daily-goal feature have no watchedAt. Backfill
+  // it from the class date so old history is not simply blank; it is the
+  // best guess available and keeps the per-day view honest about "unknown".
+  const lessons: Lesson[] = ((raw.lessons ?? []) as Lesson[]).map((l) =>
+    l.status === "assistida" && !l.watchedAt ? { ...l, watchedAt: l.date } : l
+  );
+
+  const rawSettings = (raw as { settings?: Partial<Settings> }).settings;
+  const dailyGoal = Number(rawSettings?.dailyGoal);
+
   return {
     programs,
     courses,
-    lessons: (raw.lessons as Lesson[]) ?? [],
+    lessons,
     assignments: (raw.assignments as Assignment[]) ?? [],
     notebooks: (raw.notebooks as Notebook[]) ?? [],
+    settings: {
+      dailyGoal:
+        Number.isFinite(dailyGoal) && dailyGoal >= 0
+          ? Math.floor(dailyGoal)
+          : DEFAULT_SETTINGS.dailyGoal,
+    },
   };
 }
 
