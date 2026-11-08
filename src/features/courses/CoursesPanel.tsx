@@ -11,7 +11,7 @@ import {
   Video,
   CalendarX,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type {
   Course,
   Lesson,
@@ -39,6 +39,9 @@ type Props = {
   onDelete: (id: string) => void;
   onSetLessonStatus: (lessonId: string, status: LessonStatus) => void;
   onNotebooksChange: (next: Notebook[]) => void;
+  /** Aula vinda de outra aba: expande a disciplina e abre o caderno dela. */
+  focusLesson?: { courseId: string; lessonId: string } | null;
+  onFocusHandled?: () => void;
 };
 
 const STATUS_LABEL: Record<LessonStatus, string> = {
@@ -65,6 +68,8 @@ export function CoursesPanel({
   onDelete,
   onSetLessonStatus,
   onNotebooksChange,
+  focusLesson,
+  onFocusHandled,
 }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<Course>>({});
@@ -86,6 +91,17 @@ export function CoursesPanel({
     () => new Map(programs.map((p) => [p.id, p])),
     [programs]
   );
+
+  // Expandir é só metade do caminho: a LessonRow correspondente abre o
+  // caderno sozinha quando recebe autoOpen.
+  useEffect(() => {
+    if (!focusLesson) return;
+    setExpanded((prev) =>
+      prev.has(focusLesson.courseId)
+        ? prev
+        : new Set(prev).add(focusLesson.courseId)
+    );
+  }, [focusLesson]);
 
   const toggleExpand = (id: string) =>
     setExpanded((prev) => {
@@ -373,6 +389,8 @@ export function CoursesPanel({
                             notebook={notebooks.find(
                               (n) => n.lessonId === l.id
                             )}
+                            autoOpen={focusLesson?.lessonId === l.id}
+                            onAutoOpened={onFocusHandled}
                             onStatusChange={onSetLessonStatus}
                             onNotebooksChange={onNotebooksChange}
                             allNotebooks={notebooks}
@@ -396,6 +414,8 @@ function LessonRow({
   lesson,
   course,
   notebook,
+  autoOpen,
+  onAutoOpened,
   onStatusChange,
   onNotebooksChange,
   allNotebooks,
@@ -404,11 +424,14 @@ function LessonRow({
   lesson: Lesson;
   course: Course;
   notebook: Notebook | undefined;
+  autoOpen?: boolean;
+  onAutoOpened?: () => void;
   onStatusChange: (id: string, s: LessonStatus) => void;
   onNotebooksChange: (next: Notebook[]) => void;
   allNotebooks: Notebook[];
 }) {
   const [open, setOpen] = useState(false);
+  const rowRef = useRef<HTMLLIElement>(null);
   const Icon = STATUS_ICON[lesson.status];
   const today = todayISO();
   const isPast = lesson.date < today;
@@ -435,8 +458,19 @@ function LessonRow({
         : [...allNotebooks, updated]
     );
 
+  // Chegou apontado por outra aba: abre e rola até aqui. Avisa quem pediu,
+  // senão o pedido fica grudado e a aula nunca mais pode ser fechada.
+  useEffect(() => {
+    if (!autoOpen) return;
+    if (!notebook) ensureNotebook();
+    setOpen(true);
+    rowRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+    onAutoOpened?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpen]);
+
   return (
-    <li>
+    <li ref={rowRef}>
       <div
         className={`py-1.5 flex items-center gap-2 ${
           isToday ? "font-medium" : ""

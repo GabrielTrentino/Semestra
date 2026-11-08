@@ -41,6 +41,12 @@ type Tab = "hoje" | "metas" | "disciplinas" | "calendario";
 export default function App() {
   const { state, update, reset, status, pickFolder } = useAppState();
   const [tab, setTab] = useState<Tab>("hoje");
+  // Aula cuja anotação deve abrir ao chegar na aba Disciplinas. A aba Metas
+  // só aponta; quem abre o caderno é o painel que já sabe renderizá-lo.
+  const [focusLesson, setFocusLesson] = useState<{
+    courseId: string;
+    lessonId: string;
+  } | null>(null);
   const [mode, setMode] = useState<ShellMode>("panel");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const inShell = hasShell();
@@ -370,9 +376,14 @@ export default function App() {
           <GoalsPanel
             lessons={state.lessons}
             courses={state.courses}
+            notebooks={state.notebooks}
             settings={state.settings}
             onSetGoal={setDailyGoal}
             onSetLessonStatus={setLessonStatus}
+            onOpenNotebook={(courseId, lessonId) => {
+              setFocusLesson({ courseId, lessonId });
+              setTab("disciplinas");
+            }}
           />
         )}
 
@@ -383,6 +394,8 @@ export default function App() {
             terms={TERMS}
             programs={state.programs}
             notebooks={state.notebooks}
+            focusLesson={focusLesson}
+            onFocusHandled={() => setFocusLesson(null)}
             onUpdate={updateCourse}
             onDelete={deleteCourse}
             onSetLessonStatus={setLessonStatus}

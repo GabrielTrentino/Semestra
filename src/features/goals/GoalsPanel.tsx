@@ -5,13 +5,19 @@ import {
   CheckCircle2,
   Circle,
   Video,
-  Link as LinkIcon,
+  NotebookPen,
   CalendarCheck,
   Minus,
   Plus,
   Layers,
 } from "lucide-react";
-import type { Course, Lesson, LessonStatus, Settings } from "../../lib/types";
+import type {
+  Course,
+  Lesson,
+  LessonStatus,
+  Notebook,
+  Settings,
+} from "../../lib/types";
 import { formatBR, formatBRLong, todayISO, daysBetween } from "../../lib/date";
 import { cssTint } from "../../lib/colors";
 import {
@@ -22,7 +28,6 @@ import {
   watchHistory,
   watchedOn,
 } from "../../lib/backlog";
-import { shell } from "../../lib/semestraBridge";
 
 const QUEUE_PREVIEW = 8;
 const HISTORY_DAYS = 14;
@@ -30,17 +35,21 @@ const HISTORY_DAYS = 14;
 type Props = {
   lessons: Lesson[];
   courses: Course[];
+  notebooks: Notebook[];
   settings: Settings;
   onSetGoal: (n: number) => void;
   onSetLessonStatus: (id: string, s: LessonStatus) => void;
+  onOpenNotebook: (courseId: string, lessonId: string) => void;
 };
 
 export function GoalsPanel({
   lessons,
   courses,
+  notebooks,
   settings,
   onSetGoal,
   onSetLessonStatus,
+  onOpenNotebook,
 }: Props) {
   const today = todayISO();
   const goal = settings.dailyGoal;
@@ -48,6 +57,38 @@ export function GoalsPanel({
   const courseById = useMemo(
     () => new Map(courses.map((c) => [c.id, c])),
     [courses]
+  );
+
+  /**
+   * "Aula 7" tem que significar a mesma coisa aqui e na aba Disciplinas:
+   * posição da aula dentro da disciplina, em ordem de data. Mesmo critério
+   * de ordenação usado lá.
+   */
+  const lessonNumber = useMemo(() => {
+    const byCourse = new Map<string, Lesson[]>();
+    for (const l of lessons) {
+      const arr = byCourse.get(l.courseId);
+      if (arr) arr.push(l);
+      else byCourse.set(l.courseId, [l]);
+    }
+    const n = new Map<string, number>();
+    for (const arr of byCourse.values()) {
+      arr
+        .slice()
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .forEach((l, i) => n.set(l.id, i + 1));
+    }
+    return n;
+  }, [lessons]);
+
+  const notebookByLesson = useMemo(
+    () =>
+      new Map(
+        notebooks
+          .filter((n) => n.lessonId)
+          .map((n) => [n.lessonId as string, n])
+      ),
+    [notebooks]
   );
 
   const queue = useMemo(() => pendingQueue(lessons, today), [lessons, today]);
@@ -307,7 +348,8 @@ export function GoalsPanel({
             {queue.slice(0, QUEUE_PREVIEW).map((lesson) => {
               const course = courseById.get(lesson.courseId);
               const late = daysBetween(lesson.date, today);
-              const link = lesson.link || course?.link;
+              const nb = notebookByLesson.get(lesson.id);
+              const hasNotes = !!nb && nb.blocks.length > 0;
               return (
                 <li
                   key={lesson.id}
@@ -330,6 +372,9 @@ export function GoalsPanel({
                       {course?.name ?? "Disciplina removida"}
                     </div>
                     <div className="text-[11px] text-slate-500 flex items-center gap-2">
+                      <span className="font-medium text-slate-600 dark:text-slate-300">
+                        Aula {lessonNumber.get(lesson.id) ?? "?"}
+                      </span>
                       <span>{formatBR(lesson.date)}</span>
                       {late > 0 && (
                         <span className="text-amber-600">
@@ -343,16 +388,22 @@ export function GoalsPanel({
                       )}
                     </div>
                   </div>
-                  {link && (
-                    <button
-                      type="button"
-                      onClick={() => shell.openExternal(link)}
-                      className="p-1 rounded-md text-slate-400 hover:text-blue-600 shrink-0"
-                      title="Abrir aula"
-                    >
-                      <LinkIcon className="h-3.5 w-3.5" />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => onOpenNotebook(lesson.courseId, lesson.id)}
+                    className={
+                      hasNotes
+                        ? "p-1 rounded-md text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 shrink-0"
+                        : "p-1 rounded-md text-slate-400 hover:text-blue-600 shrink-0"
+                    }
+                    title={
+                      hasNotes
+                        ? "Abrir as anotações desta aula"
+                        : "Abrir o caderno desta aula"
+                    }
+                  >
+                    <NotebookPen className="h-3.5 w-3.5" />
+                  </button>
                 </li>
               );
             })}
@@ -417,7 +468,8 @@ export function GoalsPanel({
                             {course?.name ?? "Disciplina removida"}
                           </span>
                           <span className="text-slate-400 shrink-0">
-                            aula de {formatBR(l.date)}
+                            Aula {lessonNumber.get(l.id) ?? "?"} ·{" "}
+                            {formatBR(l.date)}
                           </span>
                         </li>
                       );
