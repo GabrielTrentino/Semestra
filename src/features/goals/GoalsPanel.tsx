@@ -9,6 +9,7 @@ import {
   CalendarCheck,
   Minus,
   Plus,
+  Layers,
 } from "lucide-react";
 import type { Course, Lesson, LessonStatus, Settings } from "../../lib/types";
 import { formatBR, formatBRLong, todayISO, daysBetween } from "../../lib/date";
@@ -16,6 +17,7 @@ import { cssTint } from "../../lib/colors";
 import {
   pendingQueue,
   project,
+  projectByCourse,
   currentStreak,
   watchHistory,
   watchedOn,
@@ -62,6 +64,11 @@ export function GoalsPanel({
     [lessons]
   );
   const doneToday = useMemo(() => watchedOn(lessons, today), [lessons, today]);
+  const byCourse = useMemo(
+    () => projectByCourse(lessons, today, goal),
+    [lessons, today, goal]
+  );
+  const heaviest = byCourse.length > 0 ? byCourse[0].pending : 0;
 
   const pct =
     goal > 0 ? Math.min(100, Math.round((proj.watchedToday / goal) * 100)) : 0;
@@ -193,6 +200,98 @@ export function GoalsPanel({
           </p>
         )}
       </section>
+
+      {/* ---- dias por disciplina ---- */}
+      {byCourse.length > 0 && (
+        <section>
+          <h2 className="font-semibold text-sm mb-1 flex items-center gap-2">
+            <Layers className="h-4 w-4 text-slate-500" />
+            Dias para ficar em dia
+          </h2>
+          <p className="text-[11px] text-slate-400 mb-2 leading-snug">
+            {goal > 0 ? (
+              <>
+                No ritmo de {goal} {goal === 1 ? "aula" : "aulas"} por dia.{" "}
+                <strong className="font-medium text-slate-500 dark:text-slate-400">
+                  Focando
+                </strong>{" "}
+                = a meta inteira nessa disciplina até zerá-la.{" "}
+                <strong className="font-medium text-slate-500 dark:text-slate-400">
+                  Na fila
+                </strong>{" "}
+                = quando ela fecha seguindo a ordem das mais antigas.
+              </>
+            ) : (
+              "Defina uma meta diária acima para ver os prazos."
+            )}
+          </p>
+
+          <ul className="space-y-1.5">
+            {byCourse.map((c) => {
+              const course = courseById.get(c.courseId);
+              const share =
+                heaviest > 0 ? Math.round((c.pending / heaviest) * 100) : 0;
+              return (
+                <li
+                  key={c.courseId}
+                  className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2.5"
+                  style={{ borderLeftColor: course?.color, borderLeftWidth: 3 }}
+                >
+                  <div className="flex items-baseline gap-2">
+                    <span
+                      className="text-sm font-medium truncate flex-1 min-w-0"
+                      style={{ color: course?.color }}
+                    >
+                      {course?.name ?? "Disciplina removida"}
+                    </span>
+                    <span className="text-xs text-slate-500 shrink-0">
+                      {c.pending} {c.pending === 1 ? "aula" : "aulas"}
+                    </span>
+                  </div>
+
+                  <div className="mt-1.5 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: share + "%",
+                        background: course?.color ?? "#64748b",
+                      }}
+                    />
+                  </div>
+
+                  {c.focusDays !== null && (
+                    <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
+                      <span className="text-slate-600 dark:text-slate-300">
+                        <strong className="font-semibold">
+                          {c.focusDays} {c.focusDays === 1 ? "dia" : "dias"}
+                        </strong>{" "}
+                        <span className="text-slate-400">focando</span>
+                        <span className="text-slate-400">
+                          {" "}
+                          · até {formatBR(c.focusDate as string)}
+                        </span>
+                      </span>
+                      <span className="ml-auto text-slate-400 shrink-0">
+                        na fila: {formatBR(c.queueDate as string)}
+                      </span>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+
+          {goal > 0 && proj.finishDate && proj.daysNeeded !== null && (
+            <p className="mt-2 text-xs text-slate-500">
+              Tudo que está pendente:{" "}
+              <strong className="font-semibold text-slate-700 dark:text-slate-200">
+                {proj.daysNeeded} {proj.daysNeeded === 1 ? "dia" : "dias"}
+              </strong>{" "}
+              · zera em {formatBR(proj.finishDate)}.
+            </p>
+          )}
+        </section>
+      )}
 
       {/* ---- por onde ir agora ---- */}
       {queue.length > 0 && (
