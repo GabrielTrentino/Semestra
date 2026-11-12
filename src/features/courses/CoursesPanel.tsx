@@ -3,9 +3,7 @@ import {
   ChevronRight,
   Link as LinkIcon,
   Pencil,
-  Save,
   Trash2,
-  X,
   CheckCircle2,
   Circle,
   Video,
@@ -19,15 +17,13 @@ import type {
   Notebook,
   Program,
   Term,
-  Weekday,
 } from "../../lib/types";
 import { WEEKDAY_SHORT } from "../../lib/types";
 import { cssTint } from "../../lib/colors";
 import { progressFor } from "../../lib/generateLessons";
 import { formatBR, todayISO } from "../../lib/date";
 import { LessonNotebook } from "../notebooks/LessonNotebook";
-
-const ALL_DAYS: Weekday[] = ["SEG", "TER", "QUA", "QUI", "SEX", "SAB"];
+import { CourseForm } from "./CourseForm";
 
 type Props = {
   courses: Course[];
@@ -136,31 +132,12 @@ export function CoursesPanel({
     setDraft({});
   };
 
-  const toggleDay = (d: Weekday) => {
-    const current = (draft.weekdays ?? []) as Weekday[];
-    setDraft({
-      ...draft,
-      weekdays: current.includes(d)
-        ? current.filter((x) => x !== d)
-        : [...current, d],
-    });
-  };
-
-  const toggleTerm = (label: string) => {
-    const current = draft.termLabels ?? [];
-    setDraft({
-      ...draft,
-      termLabels: current.includes(label)
-        ? current.filter((x) => x !== label)
-        : [...current, label],
-    });
-  };
-
   if (courses.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center text-sm text-slate-500">
-        Nenhuma disciplina ainda. Abra <strong>Configurações → Importar do
-        WhatsApp</strong> para começar.
+        Nenhuma disciplina ainda. Abra <strong>Configurações →
+        Instituições</strong> para cadastrar, ou{" "}
+        <strong>Importar do WhatsApp</strong> para trazer uma grade pronta.
       </div>
     );
   }
@@ -179,104 +156,15 @@ export function CoursesPanel({
             style={{ borderLeftColor: c.color, borderLeftWidth: 4 }}
           >
             {editing ? (
-              <div className="p-4 space-y-3">
-                <input
-                  value={draft.name ?? ""}
-                  onChange={(e) =>
-                    setDraft({ ...draft, name: e.target.value })
-                  }
-                  className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2 py-1 text-sm"
-                  placeholder="Nome da disciplina"
+              <div className="p-4">
+                <CourseForm
+                  draft={draft}
+                  setDraft={setDraft}
+                  programs={programs}
+                  terms={terms}
+                  onSave={commit}
+                  onCancel={() => setEditingId(null)}
                 />
-                <input
-                  value={draft.link ?? ""}
-                  placeholder="Link padrão da aula (Zoom, Meet…)"
-                  onChange={(e) =>
-                    setDraft({ ...draft, link: e.target.value })
-                  }
-                  className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2 py-1 text-sm"
-                />
-                <select
-                  value={draft.programId ?? ""}
-                  onChange={(e) =>
-                    setDraft({
-                      ...draft,
-                      programId: e.target.value || undefined,
-                    })
-                  }
-                  className="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2 py-1 text-sm"
-                >
-                  <option value="">— Sem instituição —</option>
-                  {programs.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} · {p.institution}
-                    </option>
-                  ))}
-                </select>
-                <div>
-                  <div className="text-[11px] uppercase tracking-wide text-slate-500 mb-1">
-                    Períodos letivos (selecione os que a disciplina atravessa)
-                  </div>
-                  <div className="flex gap-1 flex-wrap">
-                    {terms.map((t) => {
-                      const on = (draft.termLabels ?? []).includes(t.label);
-                      return (
-                        <button
-                          key={t.label}
-                          type="button"
-                          onClick={() => toggleTerm(t.label)}
-                          className={`rounded-full px-2 py-0.5 text-xs border ${
-                            on
-                              ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white"
-                              : "border-slate-300 dark:border-slate-700"
-                          }`}
-                        >
-                          {t.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[11px] uppercase tracking-wide text-slate-500 mb-1">
-                    Dias da semana
-                  </div>
-                  <div className="flex gap-1 flex-wrap">
-                    {ALL_DAYS.map((d) => {
-                      const active = (draft.weekdays ?? []).includes(d);
-                      return (
-                        <button
-                          key={d}
-                          type="button"
-                          onClick={() => toggleDay(d)}
-                          className={`rounded-full px-2 py-0.5 text-xs border ${
-                            active
-                              ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white"
-                              : "border-slate-300 dark:border-slate-700"
-                          }`}
-                        >
-                          {WEEKDAY_SHORT[d]}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={commit}
-                    className="inline-flex items-center gap-1 rounded-md bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-2 py-1 text-xs"
-                  >
-                    <Save className="h-3 w-3" /> Salvar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditingId(null)}
-                    className="inline-flex items-center gap-1 text-xs text-slate-500"
-                  >
-                    <X className="h-3 w-3" /> Cancelar
-                  </button>
-                </div>
               </div>
             ) : (
               <>

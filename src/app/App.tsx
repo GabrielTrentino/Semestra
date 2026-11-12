@@ -425,6 +425,9 @@ export default function App() {
           onSaveProgram={saveProgram}
           onDeleteProgram={deleteProgram}
           onImportCourses={addCourses}
+          onAddCourse={(c) => addCourses([c])}
+          onUpdateCourse={updateCourse}
+          onDeleteCourse={deleteCourse}
           onExport={handleExport}
           onImportBackup={handleImportBackup}
           onReset={reset}

@@ -11,6 +11,8 @@ import {
   Pencil,
 } from "lucide-react";
 import type { Course, Program, Term } from "../../lib/types";
+import { WEEKDAY_SHORT } from "../../lib/types";
+import { CourseForm } from "../courses/CourseForm";
 import { WhatsAppImporter } from "../importer/WhatsAppImporter";
 import { COURSE_PALETTE } from "../../lib/colors";
 
@@ -24,6 +26,9 @@ type Props = {
   onSaveProgram: (p: Program) => void;
   onDeleteProgram: (id: string) => void;
   onImportCourses: (newCourses: Course[]) => void;
+  onAddCourse: (c: Course) => void;
+  onUpdateCourse: (id: string, patch: Partial<Course>) => void;
+  onDeleteCourse: (id: string) => void;
   onExport: () => void;
   onImportBackup: () => void;
   onReset: () => void;
@@ -89,9 +94,13 @@ export function SettingsPanel(props: Props) {
               <ProgramsEditor
                 programs={props.programs}
                 existingCourses={props.courses}
+                terms={props.terms}
                 onSave={props.onSaveProgram}
                 onDelete={props.onDeleteProgram}
                 onImportCourses={props.onImportCourses}
+                onAddCourse={props.onAddCourse}
+                onUpdateCourse={props.onUpdateCourse}
+                onDeleteCourse={props.onDeleteCourse}
               />
             )}
             {section === "whatsapp" && (
@@ -139,15 +148,23 @@ const INFNET_2026_CATALOG: { name: string }[] = [
 function ProgramsEditor({
   programs,
   existingCourses,
+  terms,
   onSave,
   onDelete,
   onImportCourses,
+  onAddCourse,
+  onUpdateCourse,
+  onDeleteCourse,
 }: {
   programs: Program[];
   existingCourses: Course[];
+  terms: Term[];
   onSave: (p: Program) => void;
   onDelete: (id: string) => void;
   onImportCourses: (cs: Course[]) => void;
+  onAddCourse: (c: Course) => void;
+  onUpdateCourse: (id: string, patch: Partial<Course>) => void;
+  onDeleteCourse: (id: string) => void;
 }) {
   const infnetProgram = programs.find((p) => p.calendarId === "infnet-2026");
   const existingNames = new Set(
@@ -261,10 +278,41 @@ function ProgramsEditor({
                   </button>
                 </div>
               )}
+
+              {!editing && (
+                <CoursesOfProgram
+                  programId={p.id}
+                  courses={existingCourses}
+                  programs={programs}
+                  terms={terms}
+                  onAdd={onAddCourse}
+                  onUpdate={onUpdateCourse}
+                  onDelete={onDeleteCourse}
+                />
+              )}
             </li>
           );
         })}
       </ul>
+
+      {existingCourses.some((c) => !c.programId) && (
+        <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 p-3">
+          <div className="text-sm font-medium">Sem instituição</div>
+          <p className="text-xs text-slate-500">
+            Disciplinas que ainda não pertencem a nenhuma formação. Edite cada
+            uma para escolher onde ela entra.
+          </p>
+          <CoursesOfProgram
+            programId={null}
+            courses={existingCourses}
+            programs={programs}
+            terms={terms}
+            onAdd={onAddCourse}
+            onUpdate={onUpdateCourse}
+            onDelete={onDeleteCourse}
+          />
+        </div>
+      )}
 
       {adding ? (
         <div className="rounded-lg border border-slate-300 dark:border-slate-700 p-3">
@@ -315,6 +363,185 @@ function ProgramsEditor({
             {infnetProgram.name}
           </button>
         </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Disciplinas de uma instituição (ou, com programId null, as que ainda não
+ * têm instituição). Cadastrar e manter a grade era possível só pela aba
+ * Disciplinas ou pelos importadores; aqui fica junto de quem é dona dela.
+ *
+ * Usa o mesmo CourseForm da aba Disciplinas: os campos que geram aula
+ * (períodos letivos e dias da semana) não podem divergir entre as telas.
+ */
+function CoursesOfProgram({
+  programId,
+  courses,
+  programs,
+  terms,
+  onAdd,
+  onUpdate,
+  onDelete,
+}: {
+  programId: string | null;
+  courses: Course[];
+  programs: Program[];
+  terms: Term[];
+  onAdd: (c: Course) => void;
+  onUpdate: (id: string, patch: Partial<Course>) => void;
+  onDelete: (id: string) => void;
+}) {
+  const mine = courses.filter((c) => (c.programId ?? null) === programId);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState<Partial<Course>>({});
+
+  const reset = () => {
+    setDraft({});
+    setEditingId(null);
+    setAdding(false);
+  };
+
+  const startAdd = () => {
+    setEditingId(null);
+    setAdding(true);
+    setDraft({
+      id: crypto.randomUUID(),
+      name: "",
+      color: COURSE_PALETTE[courses.length % COURSE_PALETTE.length],
+      weekdays: [],
+      termLabels: [],
+      programId: programId ?? undefined,
+    });
+  };
+
+  const startEdit = (c: Course) => {
+    setAdding(false);
+    setEditingId(c.id);
+    setDraft({
+      ...c,
+      weekdays: c.weekdays ?? [],
+      termLabels: c.termLabels ?? [],
+    });
+  };
+
+  const commit = () => {
+    const name = draft.name?.trim();
+    if (!name) return;
+    // termLabels vazio significa "ano todo"; guardar [] faria o gerador de
+    // aulas tratar como lista explícita e vazia.
+    const termLabels =
+      draft.termLabels && draft.termLabels.length > 0
+        ? draft.termLabels
+        : undefined;
+    if (adding) {
+      onAdd({ ...(draft as Course), name, termLabels });
+    } else if (editingId) {
+      onUpdate(editingId, { ...draft, name, termLabels });
+    }
+    reset();
+  };
+
+  return (
+    <div className="mt-3 border-t border-slate-200 dark:border-slate-800 pt-2">
+      <div className="text-[11px] uppercase tracking-wide text-slate-500 mb-1">
+        Disciplinas ({mine.length})
+      </div>
+
+      {mine.length === 0 && !adding && (
+        <p className="text-xs text-slate-400 mb-2">
+          Nenhuma disciplina cadastrada aqui ainda.
+        </p>
+      )}
+
+      <ul className="space-y-1">
+        {mine.map((c) =>
+          editingId === c.id ? (
+            <li
+              key={c.id}
+              className="rounded-md border border-slate-300 dark:border-slate-700 p-2"
+            >
+              <CourseForm
+                draft={draft}
+                setDraft={setDraft}
+                programs={programs}
+                terms={terms}
+                onSave={commit}
+                onCancel={reset}
+              />
+            </li>
+          ) : (
+            <li
+              key={c.id}
+              className="rounded-md border border-slate-200 dark:border-slate-800 px-2 py-1.5 flex items-center gap-2"
+              style={{ borderLeftColor: c.color, borderLeftWidth: 3 }}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="text-sm truncate" style={{ color: c.color }}>
+                  {c.name}
+                </div>
+                <div className="text-[11px] text-slate-500">
+                  {c.termLabels && c.termLabels.length > 0
+                    ? c.termLabels.join(" · ")
+                    : "ano todo"}
+                  {" · "}
+                  {c.weekdays.length > 0
+                    ? c.weekdays.map((d) => WEEKDAY_SHORT[d]).join(", ")
+                    : "sem dias definidos"}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => startEdit(c)}
+                className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+                title="Editar disciplina"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    confirm(
+                      `Remover "${c.name}"? As aulas e os cadernos dela também serão apagados.`
+                    )
+                  ) {
+                    onDelete(c.id);
+                    if (editingId === c.id) reset();
+                  }
+                }}
+                className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-red-600 shrink-0"
+                title="Remover disciplina"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </li>
+          )
+        )}
+      </ul>
+
+      {adding ? (
+        <div className="mt-2 rounded-md border border-slate-300 dark:border-slate-700 p-2">
+          <CourseForm
+            draft={draft}
+            setDraft={setDraft}
+            programs={programs}
+            terms={terms}
+            onSave={commit}
+            onCancel={reset}
+            saveLabel="Cadastrar"
+          />
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={startAdd}
+          className="mt-2 inline-flex items-center gap-1 rounded-md border border-slate-300 dark:border-slate-700 px-2 py-1 text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+        >
+          <Plus className="h-3 w-3" /> Adicionar disciplina
+        </button>
       )}
     </div>
   );
