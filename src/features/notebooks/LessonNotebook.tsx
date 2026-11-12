@@ -226,6 +226,10 @@ export function BlockEditor({
   onDelete: () => void;
   onRun: () => void;
 }) {
+  // Recolher é só manual (o chevron no cabeçalho). Recolher ao perder o foco
+  // fecha a anotação no meio da escrita — basta clicar em outro bloco, na
+  // barra de ferramentas de outro bloco ou fora do app. O estado inicial
+  // ainda é recolhido para o caderno abrir como um índice.
   const [collapsed, setCollapsed] = useState<boolean>(() => block.source.trim().length > 0);
   const [outputOpen, setOutputOpen] = useState(true);
   const [imgNote, setImgNote] = useState<string | null>(null);
@@ -377,12 +381,6 @@ export function BlockEditor({
           onChange={(e) =>
             onChange({ source: e.target.value } as Partial<NotebookBlock>)
           }
-          onBlur={(e) => {
-            // Only collapse if focus didn't move inside this block (toolbar buttons).
-            const next = e.relatedTarget as Node | null;
-            if (next && e.currentTarget.parentElement?.contains(next)) return;
-            if (block.source.trim().length > 0) setCollapsed(true);
-          }}
           onPaste={(e) => {
             const files = imagesFromTransfer(e.clipboardData);
             if (files.length === 0) return; // plain text pastes normally
@@ -482,9 +480,6 @@ export function BlockEditor({
         onChange={(e) =>
           onChange({ source: e.target.value } as Partial<NotebookBlock>)
         }
-        onBlur={() => {
-          if (block.source.trim().length > 0) setCollapsed(true);
-        }}
         rows={Math.min(14, Math.max(3, block.source.split("\n").length + 1))}
         spellCheck={false}
         className="w-full resize-y border-0 bg-slate-950 text-slate-100 font-mono text-[12px] p-2 focus:outline-none"
