@@ -161,6 +161,7 @@ function applyMode(mode) {
   mainWindow.setAlwaysOnTop(mode !== "full", "floating");
   mainWindow.setResizable(mode === "full");
   mainWindow.setSkipTaskbar(mode !== "full");
+  mainWindow.moveTop();
   saveState(state);
   mainWindow.webContents.send("semestra:mode", mode);
 }
@@ -175,12 +176,35 @@ function rememberPosition() {
   saveState(state);
 }
 
+/**
+ * Reafirma o "sempre na frente".
+ *
+ * O Windows rebaixa janelas TOPMOST quando um app toma a tela inteira (um
+ * jogo, um player de vídeo) e nunca devolve o status sozinho. O Electron
+ * continua achando que está no topo, então isAlwaysOnTop() mente e não
+ * adianta testar antes: é preciso desligar e religar a flag.
+ *
+ * Sem isso o painel fica atrás de tudo e nem clicar nele resolve, porque
+ * ganhar foco não muda a ordem Z de uma janela rebaixada.
+ */
+function reassertOnTop() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (state.mode === "full") {
+    mainWindow.moveTop();
+    return;
+  }
+  mainWindow.setAlwaysOnTop(false);
+  mainWindow.setAlwaysOnTop(true, "floating");
+  mainWindow.moveTop();
+}
+
 function toggleVisibility() {
   if (!mainWindow) return;
   if (mainWindow.isVisible() && mainWindow.isFocused()) {
     mainWindow.hide();
   } else {
     mainWindow.show();
+    reassertOnTop();
     mainWindow.focus();
   }
 }
@@ -241,6 +265,10 @@ function createWindow() {
 
   mainWindow.on("moved", rememberPosition);
   mainWindow.on("blur", stopBubbleDrag);
+  // Interagir com a janela é o momento em que o rebaixamento aparece, então
+  // é onde ele é desfeito.
+  mainWindow.on("focus", reassertOnTop);
+  mainWindow.on("show", reassertOnTop);
 
   mainWindow.on("closed", () => {
     mainWindow = null;
@@ -902,6 +930,7 @@ if (!gotLock) {
   app.on("second-instance", () => {
     if (mainWindow) {
       mainWindow.show();
+      reassertOnTop();
       mainWindow.focus();
     }
   });
